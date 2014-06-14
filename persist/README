@@ -1,10 +1,54 @@
 persist_mqtt.js is a .js script running on node.js to persist Fluksometer
-readings in a MySQL database. It connects to the FLM's MQTT broker on the
-specified IP address (change it to your FLM's or broker's address!)
+readings in a MySQL database.
+It connects to the FLM's MQTT broker on the specified IP address
+(change it to your FLM's or broker's address!)
 After start the script checks if the persistence table in the database FLM
 exists; if not, it creates the table.
-Subcribing to the sensor topics, the script starts to insert received
+Subscribing to the sensor topics, the script starts to insert received
 values in the database for later retrieval, e.g. by the chart.
+
+Setting up the database
+=======================
+Make sure you have installed a database; in my case it is MySQL.
+
+sudo apt-get install mysql-server mysql-client
+
+This installs the database and all dependent packages not already installed.
+During installation you are asked for a root password of the database; I chose
+'raspberry' for this (as a no-brainer to the default RasPi wheezy password)
+Log into the database to create the schema used for storing Flukso data:
+
+mysql -u root -p
+mysql> create database flm;
+
+By this you log into the database as root; provide above given password when asked.
+Create the database used in the logging scripts; chose whatever you like, but
+be sure to have the same database applied also in the scripts. Log out of the
+database with quit; (don't forget the semicolon)
+
+To use the mySQL database for storing data not only via the root user
+you have to set up a corresponding "other" user; this can be done from
+the mySQL command line by following commands:
+
+Log into the mySQL database called 'flm':
+pi@raspberrypi ~ $ mysql -u root -p flm
+
+mysql> create user 'pi'@'localhost' identified by 'raspberry';
+mysql> grant all privileges on flm.* to 'pi'@'localhost';
+mysql> flush privileges;
+mysql> set password for 'pi'@'localhost' = password('raspberry');
+mysql> quit
+
+Now you may log on to the database also as user 'pi':
+pi@raspberry ~ $ mysql -u pi -p flm
+
+mysql> show databases;
+mysql> show tables;
+mysql> select count(*) from flmdata;
+
+Note again: If the database flm was not created beforehand, make so by
+mysql> create database flm;
+mysql> use flm;
 
 Markus Gebhard, May 2014, all code under MIT license without any warrenty.
 

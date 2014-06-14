@@ -1,14 +1,13 @@
 #!/usr/bin/env node
 /***********************************************************
 This .js file serves a chart display from FLM sensor data
-stored in a mysql database. (alternative version using socket
-instead of post method)
+stored in a mysql database.
 (c) Markus Gebhard, Karlsruhe, 2014 - under MIT license
 delivered "as is", no guarantee to work ;-)
 
 uses
   mysql module: https://github.com/felixge/node-mysql
-  socket.io module: http://github.com/learnboost/socket.io
+  socket.io module: http://github.com/Automattic/socket.io
 ************************************************************/
 var mysql = require('mysql');
 // set the listening port to your convenience
@@ -17,19 +16,16 @@ var fs = require('fs');
 var url = require('url');
 var path = require('path');
 var qs = require('querystring');
-var socket = require('socket.io');
+// use the socket.io module listening on the http port
+var io = require('socket.io')(http);
 
+// prepare the database access - use your db's values
 var dbaccess = {
       host : 'localhost',
       user : 'pi',
       password : 'raspberry',
       database : 'flm'
     };
-
-// prepare websocket
-var io = socket.listen(http);
-// set log level: 1 = error only
-io.set('log level', 1);
 
 // Serve the http request
 function handler (req, res) {
@@ -72,8 +68,8 @@ function handler (req, res) {
 };
 
 // set the websocket io handler
-io.sockets.on('connection', function(socket) {
-  socket.on('query',  function (data) { handlequery(data); });
+io.on('connection', function(socket) {
+  socket.on('query', function (data) { handlequery(data); });
 });
 
 // define what shall be done on a io request

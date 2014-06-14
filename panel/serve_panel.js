@@ -5,17 +5,19 @@
  * Adapted to FLM by Markus Gebhard, Karlsruhe, 02/2014
  * Static http server part taken from Ryan Florence (rpflorence on github)
  * https://gist.github.com/rpflorence/701407
- * Note: Use socket.io v0.9 for this script
+ * ************************************************************
+ * Note: Use socket.io v1.0 for this script...
  */
 
-// define the used modules: mqtt for client, socket.io for push,
-// http for page serving, fs for getting the index.html
-var mqtt = require('mqtt');
-var socket = require('socket.io');
-var http = require('http').createServer(handler);
+// use http for page serving, fs for getting the index.html
+var http = require('http').createServer(handler).listen(1080);
 var fs = require('fs');
 var url = require('url');
 var path = require('path');
+
+// use mqtt for client, socket.io for push,
+var mqtt = require('mqtt');
+var io = require('socket.io')(http); // the socket listens on the http port
 
 // define the mqtt broker to connect to and set up the client
 //var mqttbroker = 'localhost';
@@ -23,43 +25,23 @@ var mqttbroker = '192.168.0.50';  // provide local FLM address here
 var mqttport = 1883;
 var mqttclient = mqtt.createClient(mqttport, mqttbroker);
 
-// define the socket.io to pipe mqtt messages to
-//var io = socket.listen(3000);
-var io = socket.listen(http);
-
-/* socket.io log levels
- * 0 - error
- * 1 - warn
- * 2 - info
- * 3 - debug
-*/
-// define socket.io output
-io.set('log level', 0);
-
 // Subscribe to topic
-io.sockets.on('connection', function (socket) {
-    //console.log('Connection established');
-    socket.on('subscribe', function (data) {
-        mqttclient.subscribe(data.topic);
-        //console.log('Subscribed to '+data.topic);
-    });
-});
-
+io.on('connection', function (socket) {
+  socket.on('subscribe', function (data) {
+    mqttclient.subscribe(data.topic);
+  });
 // Push the message to socket.io
-mqttclient.on('message', function(topic, payload) {
-    io.sockets.emit('mqtt',
-        {'topic'  : topic,
-         'payload' : payload
-        }
+  mqttclient.on('message', function(topic, payload) {  
+    socket.emit('mqtt',
+      {'topic'  : topic,
+       'payload' : payload
+      }
     );
+  });
 });
 
 // Serve the index.html page
 function handler (req, res) {
-//  easiest case: serve a static html page
-//  res.writeHead(200, { 'Content-Type':'text/html'});
-//  fs.createReadStream('./index.html').pipe(res);
-// higher sophisticated case: serve complex html
     var uri = url.parse(req.url).pathname
         , filename = path.join(process.cwd(), uri);
 
@@ -96,5 +78,3 @@ function handler (req, res) {
     });
   });
 };
-
-http.listen(1080);

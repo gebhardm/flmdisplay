@@ -1,0 +1,10 @@
+# ignore all OS specific files
+.DS_Store
+nohup.out
+Thumbs.db
+*.log
+# ignore AVR Studio specific files
+default/
+*.aws
+*.aps
+*.pptx
