@@ -18,7 +18,7 @@ All folders contain a README that describes the intention of the contained
 script and its usage. ("Wer lesen kann, ist klar im Vorteil")
 
 Note that css/ and js/ are just script storages of reuse components without
-further information - on these your have to use the original sources...
+further information - on these you have to use the original sources...
 (I will not Google this for you)
 
 All code provided under the respective licences; if not denoted otherwise
