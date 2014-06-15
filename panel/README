@@ -4,6 +4,29 @@ a MQTT message to socket.io pipe with an integrated simple http
 server. The provided page (index.html) displays data of all retrieved
 FLM sensor gauges; the panel.html includes the counters also.
 
+The panel is capable to display realtime data from FLM sent MQTT messages
+using the format
+
+/sensor/<sensor id>/gauge [timestamp,value,unit]
+
+It is also capable to display messages provided through the FLM's MQTT
+broker with the same format as above or the simpler format
+
+/sensor/<sensor id>/gauge value
+/sensor/<senso id>/gauge [value,unit]
+
+denoting the sensor-topic with gauge and an ID plus a payload of single value,
+single value with unit, and timestamp, valeu and unit.
+The latter may easily be published by, for example, an Arduino based sensor, 
+for example on temperature or air pressure.
+
+Using the "panel.html" (http://<server ip>:1080/panel.html) also shows the
+MQTT messages with the format
+
+/sensor/<sensor id>/counter [timestamp, value, unit]
+
+as provided by the FLM. Refer to the PNG screenshots for an impression.
+
 How to use
 ==========
 To run the script install node.js; easiest from http://github.com/joyent/node.
