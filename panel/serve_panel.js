@@ -1,8 +1,9 @@
 #!/usr/bin/env node
 /**
- * Copyright (c) 2013, Fabian Affolter <fabian@affolter-engineering.ch>
+ * In parts copyright (c) 2013, Fabian Affolter <fabian@affolter-engineering.ch>
  * Released under the MIT license. See LICENSE file for details.
  * Adapted to FLM by Markus Gebhard, Karlsruhe, 02/2014
+ * enhanced to zeroconfig FLM discovery June 2014, (c) Markus Gebhard
  * Static http server part taken from Ryan Florence (rpflorence on github)
  * https://gist.github.com/rpflorence/701407
  * ************************************************************
@@ -19,26 +20,27 @@ var path = require('path');
 var mqtt = require('mqtt');
 var io = require('socket.io')(http); // the socket listens on the http port
 
-// define the mqtt broker to connect to and set up the client
-//var mqttbroker = 'localhost';
-var mqttbroker = '192.168.0.50';  // provide local FLM address here
-var mqttport = 1883;
-var mqttclient = mqtt.createClient(mqttport, mqttbroker);
+// multicast DNS service discovery
+var mdns = require('mdns');
 
+// detect mqtt publishers and create corresponding servers
+var mdnsbrowser = mdns.createBrowser(mdns.tcp('mqtt'));
+mdnsbrowser.on('serviceUp', function(service) {
+  console.log('detected:'+service.addresses[0]+':'+service.port);
+  var mqttclient = mqtt.createClient(service.port, service.addresses[0]);
 // Subscribe to topic
-io.on('connection', function (socket) {
-  socket.on('subscribe', function (data) {
-    mqttclient.subscribe(data.topic);
+  io.on('connection', function (socket) {
+    socket.on('subscribe', function (data) {
+      mqttclient.subscribe(data.topic);
   });
 // Push the message to socket.io
   mqttclient.on('message', function(topic, payload) {  
-    socket.emit('mqtt',
-      {'topic'  : topic,
-       'payload' : payload
-      }
-    );
+    socket.emit('mqtt',{'topic'  : topic,
+                        'payload' : payload });
+    });
   });
 });
+mdnsbrowser.start();
 
 // Serve the index.html page
 function handler (req, res) {

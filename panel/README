@@ -31,19 +31,22 @@ How to use
 ==========
 To run the script install node.js; easiest from http://github.com/joyent/node.
 Install node.js using the command sequence
-"git checkout v0.10.28-release", "./configure",  "make" and "sudo make install".
+"git checkout v0.10.29-release", "./configure",  "make" and "sudo make install".
 
-Install the MQTT and socket.io modules with "npm install mqtt socket.io". Be aware
-that these modules evolve; there was an issue with incompatible changes using
+Install the MQTT, mdns, and socket.io modules with "npm install mdns mqtt socket.io".
+Be aware that these modules evolve; there was an issue with incompatible changes using
 socket.io as v0.9 behaves differently than v1.0 - so, even though I tested the
 stuff, it may not work with a next version of the used modules...
 
 Usual execution
 ---------------
 On a running node.js installation just run the ./panel.sh script to start
-the server - be aware to adapt the MQTT client address in the serve_panel.js
-to your local FLM's address - no further configursation is needed (again,
-be aware of version incompatibilities within the environment used!)
+the server.
+Note that with using mdns, the multicast DNS service discovery, the MQTT client
+address(es) are discovered automatically by serve_panel.js.
+So there is no further configuration needed (again, be aware of version
+incompatibilities within the environment used!)
+
 Point your wherever located browser to the web server's IP address port 1080,
 in my example http://192.168.0.70:1080 - the index.html page is loaded
 
