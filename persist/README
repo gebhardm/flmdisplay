@@ -1,15 +1,23 @@
 persist_mqtt.js is a .js script running on node.js to persist Fluksometer
 readings in a MySQL database - so it needs node.js installed...
-It connects to the FLM's MQTT broker on the specified IP address
-(change it to your FLM's or broker's address in the respective line!)
+It connects to the FLM's MQTT broker on the discovered IP address(es)
+using the multicast DNS service discovery - so there is no further
+configuration to change.
 
-Make sure the mqtt and mysql node_modules are installed; if they are not
-installed, install them using 'npm install mqtt mysql'.
+Make sure the mdns, mqtt and mysql node_modules are installed; if they are not
+installed, install them using 'npm install mdns mqtt mysql'.
+
+Note: To get the mdns module installed on a Raspberry Pi by npm you also need the
+package libavahi-compat-libdnssd-dev installed in the system:
+
+sudo apt-get update
+sudo apt-get install libavahi-compat-libdnssd-dev
 
 After start (simply use ./persist.sh), the script checks if the persistence
 table in the database FLM exists; if not, it creates the table.
 Subscribing to the sensor topics, the script starts to insert received
-values in the database for later retrieval, e.g. by the chart.
+values (i.e. mqtt messages on topic /sensor/#) in the database for later
+retrieval, e.g. by the chart.
 
 Setting up the database
 =======================
@@ -24,18 +32,17 @@ Log into the database to create the schema used for storing Flukso data:
 
 mysql -u root -p
 mysql> create database flm;
+mysql> use flm;
 
 By this you log into the database as root; provide above given password when asked.
 Create the database used in the logging scripts; chose whatever you like, but
-be sure to have the same database applied also in the scripts. Log out of the
-database with quit; (don't forget the semicolon)
+be sure to have the same database applied also in the scripts. With the use
+command you change to the created database for further actions.
 
 To use the mySQL database for storing data not only via the root user
 you have to set up a corresponding "other" user; this can be done from
-the mySQL command line by following commands:
-
-Log into the mySQL database called 'flm':
-pi@raspberrypi ~ $ mysql -u root -p flm
+the mySQL command line by following commands (assuming you are still logged
+on to the database - if not, use 'mysql -u root -p flm' from the prompt):
 
 mysql> create user 'pi'@'localhost' identified by 'raspberry';
 mysql> grant all privileges on flm.* to 'pi'@'localhost';
@@ -49,10 +56,6 @@ pi@raspberry ~ $ mysql -u pi -p flm
 mysql> show databases;
 mysql> show tables;
 mysql> select count(*) from flmdata;
-
-Note again: If the database flm was not created beforehand, make so by
-mysql> create database flm;
-mysql> use flm;
 
 Markus Gebhard, May 2014, all code under MIT license without any warrenty.
 
