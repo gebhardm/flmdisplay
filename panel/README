@@ -38,8 +38,9 @@ Be aware that these modules evolve; there was an issue with incompatible changes
 socket.io as v0.9 behaves differently than v1.0 - so, even though I tested the
 stuff, it may not work with a next version of the used modules...
 
-Note: To install mdns with npm you need to have installed also the avahi compatibility
-library:
+To install mdns with npm on a Raspberry Pi you need to have installed also the
+avahi compatibility library (note that mdns  throws some warnings on usage):
+
 sudo apt-get update
 sudo apt-get install libavahi-compat-libdnssd-dev
 

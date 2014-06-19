@@ -13,14 +13,20 @@ package libavahi-compat-libdnssd-dev installed in the system:
 sudo apt-get update
 sudo apt-get install libavahi-compat-libdnssd-dev
 
+As mdns uses a compatibility layer, be aware that it throws warnings on use; follow
+the links to get an understanding what has happened (and then ignore them). 
+
+Starting the script
+===================
+
 After start (simply use ./persist.sh), the script checks if the persistence
 table in the database FLM exists; if not, it creates the table.
 Subscribing to the sensor topics, the script starts to insert received
 values (i.e. mqtt messages on topic /sensor/#) in the database for later
 retrieval, e.g. by the chart.
 
-Setting up the database
-=======================
+Precondition: Setting up the database
+=====================================
 Make sure you have installed a database; in my case it is MySQL.
 
 sudo apt-get install mysql-server mysql-client

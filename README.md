@@ -18,10 +18,18 @@ All folders contain a README that describes the intention of the contained
 script and its usage. ("Wer lesen kann, ist klar im Vorteil")
 
 Note that css/ and js/ are just script storages of reuse components without
-further information - on these you have to use the original sources...
+further information - on these you have to use the original sources and
+respect the corresponding licences...
 (I will not Google this for you)
 
+Note that as also this code evolves, there are different releases denoting
+different stages or sets of features provided along the development.
+See the respective release menu in github
+(https://github.com/gebhardm/flmdisplay/releases)
+or have a look with 'git tag' - check out the version to your
+convenience.
+
 All code provided under the respective licences; if not denoted otherwise
-the MIT licence is the one to care about...
+the MIT licence is the one to care about (http://opensource.org/licenses/MIT)...
 
 (c) 2014, Markus Gebhard, Karlsruhe
