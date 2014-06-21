@@ -4,14 +4,16 @@
  * Released under the MIT license. See LICENSE file for details.
  * Adapted to FLM by Markus Gebhard, Karlsruhe, 02/2014
  * enhanced to zeroconfig FLM discovery June 2014, (c) Markus Gebhard
+ * uses https://github.com/agnat/node_mdns - be aware of Apple compatibility layer
  * Static http server part taken from Ryan Florence (rpflorence on github)
  * https://gist.github.com/rpflorence/701407
  * ************************************************************
  * Note: Use socket.io v1.0 for this script...
  */
 
-// use http for page serving, fs for getting the index.html
-var http = require('http').createServer(handler).listen(1080);
+// use http for page serving, fs for getting the *.html files
+var httpport = 1080;
+var http = require('http').createServer(handler).listen(httpport);
 var fs = require('fs');
 var url = require('url');
 var path = require('path');
@@ -22,6 +24,9 @@ var io = require('socket.io')(http); // the socket listens on the http port
 
 // multicast DNS service discovery
 var mdns = require('mdns');
+// advertise the http server on the httpport
+var ad = new mdns.Advertisement(mdns.tcp('http'), httpport, {name:'flmpanel'});
+ad.start();
 
 // detect mqtt publishers and create corresponding servers
 var mdnsbrowser = mdns.createBrowser(mdns.tcp('mqtt'));
