@@ -51,7 +51,9 @@ var mdnsbrowser = mdns.createBrowser(mdns.tcp('mqtt'));
 mdnsbrowser.on('serviceUp', function (service) {
                console.log('detected:' + service.addresses[0] + ':' + service.port);
                var mqttclient = mqtt.createClient(service.port, service.addresses[0]);
-               // Subscribe to topic
+// for the persistence subscription is needed:
+               mqttclient.subscribe('/sensor/#');
+// handle socketio requests
                io.on('connection', function (socket) {
                      // handle database query request
                      socket.on('query', function (data) {
