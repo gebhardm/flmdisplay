@@ -1,0 +1,216 @@
+#!/usr/bin/env node
+
+/*
+ * This is the combined script to serve a panel, chart and persistence service
+ * for Fluksometer data processing.
+ * Markus Gebhard, Karlsruhe, 06/2014
+ *
+ * In parts copyright (c) 2013, Fabian Affolter <fabian@affolter-engineering.ch>
+ * Released under the MIT license. See LICENSE file for details.
+ *
+ * zeroconfig FLM discovery uses https://github.com/agnat/node_mdns
+ * be aware of Apple compatibility layer
+ * Static http server part taken from Ryan Florence (rpflorence on github)
+ * https://gist.github.com/rpflorence/701407
+ * ************************************************************
+ * Note: Use socket.io v1.0 for this script...
+ */
+
+// use http for page serving, fs for getting the *.html files
+var httpport = 1080;
+var http = require('http').createServer(httphandler).listen(httpport);
+var fs = require('fs');
+var url = require('url');
+var path = require('path');
+// database access
+var mysql = require('mysql');
+// prepare the database access - use your db's values
+var dbaccess = {
+host: 'localhost',
+user: 'pi',
+password: 'raspberry',
+database: 'flm'
+};
+// use mqtt for client, socket.io for push,
+var mqtt = require('mqtt');
+var io = require('socket.io')(http); // the socket listens on the http port
+
+// multicast DNS service discovery
+var mdns = require('mdns');
+// advertise the http server on the httpport
+var ad = new mdns.Advertisement(mdns.tcp('http'), httpport, {
+                                name: 'FLM data processor'
+                                });
+ad.start();
+
+// detect mqtt publishers and create corresponding servers
+var mdnsbrowser = mdns.createBrowser(mdns.tcp('mqtt'));
+// handle detected devices
+mdnsbrowser.on('serviceUp', function (service) {
+               console.log('detected:' + service.addresses[0] + ':' + service.port);
+               var mqttclient = mqtt.createClient(service.port, service.addresses[0]);
+               // Subscribe to topic
+               io.on('connection', function (socket) {
+                     // handle database query request
+                     socket.on('query', function (data) {
+                               handlequery(data);
+                               });
+                     // handle subscription request
+                     socket.on('subscribe', function (data) {
+                               mqttclient.subscribe(data.topic);
+                               });
+                     // Handle database write and push the message to socket.io
+                     mqttclient.on('message', function (topic, payload) {
+                                   var subtopics = topic.split('/');
+                                   switch (subtopics[3]) {
+                                   case 'gauge':
+                                   var gauge = JSON.parse(payload);
+                                   // FLM gauges consist of timestamp, value, and unit
+                                   if (gauge.length == 3) {
+                                   // use the following conversion when using mySQL TIMESTAMP and replace gauge[0]
+                                   //var date = new Date(gauge[0]*1000).toISOString().slice(0, 19).replace('T', ' ');
+                                   var insertStr = 'INSERT INTO flmdata' + ' (sensor, timestamp, value, unit)' + ' VALUES ("' + subtopics[2] + '",' + ' "' + gauge[0] + '",' + ' "' + gauge[1] + '",' + ' "' + gauge[2] + '")' + ' ON DUPLICATE KEY UPDATE' + ' sensor = VALUES(sensor),' + ' timestamp = VALUES(timestamp),' + ' value = VALUES(value),' + ' unit = VALUES(unit);';
+                                   database.query(insertStr, function (err, res) {
+                                                  if (err) {
+                                                  database.end();
+                                                  throw err;
+                                                  }
+                                                  }); // database.query
+                                   } // gauge length 3 - you may define further gauge lengths to be persisted
+                                   break;
+                                   case 'counter':
+                                   break;
+                                   } // switch
+                                   
+                                   // emit received message to socketio listener
+                                   socket.emit('mqtt', {
+                                               'topic': topic,
+                                               'payload': payload
+                                               });
+                                   });
+                     });
+               });
+mdnsbrowser.start();
+
+// Serve the index.html page
+function httphandler(req, res) {
+    var uri = url.parse(req.url).pathname,
+    filename = path.join(process.cwd(), uri);
+    
+    var contentTypesByExtension = {
+        '.html': "text/html",
+        '.css': "text/css",
+        '.js': "text/javascript"
+    };
+    // serve requested files
+    fs.exists(filename, function (exists) {
+              if (!exists) {
+              res.writeHead(404, {
+                            "Content-Type": "text/plain"
+                            });
+              res.write("404 Not Found\n");
+              res.end();
+              return;
+              }
+              
+              if (fs.statSync(filename).isDirectory()) filename += '/index.html';
+              
+              fs.readFile(filename, "binary", function (err, file) {
+                          if (err) {
+                          res.writeHead(500, {
+                                        "Content-Type": "text/plain"
+                                        });
+                          res.write(err + "\n");
+                          res.end();
+                          return;
+                          }
+                          
+                          var headers = {};
+                          var contentType = contentTypesByExtension[path.extname(filename)];
+                          if (contentType) headers["Content-Type"] = contentType;
+                          res.writeHead(200, headers);
+                          res.write(file, "binary");
+                          res.end();
+                          });
+              });
+};
+
+// define what shall be done on a io request
+function handlequery(data) {
+    /* received data package has following structure:
+     data = {
+     fromDate : YYYYMMDD
+     fromTime : HHMMSS
+     toDate : YYYYMMDD
+     toTime : HHMMSS
+     }
+     */
+    // send message that data load it started...
+    io.sockets.emit('info', '<center>Loading...</center>');
+    // compute time interval to query
+    var fromTimestamp = Date.parse(data.fromDate + ' ' + data.fromTime) / 1000;
+    var toTimestamp = Date.parse(data.toDate + ' ' + data.toTime) / 1000;
+    // check delivered interval
+    if (toTimestamp < fromTimestamp) {
+        var temp = fromTimestamp;
+        fromTimestamp = toTimestamp;
+        toTimestamp = temp;
+    }
+    var timeLen = toTimestamp - fromTimestamp;
+    // check if interval is small enough to query
+    if (timeLen > (12 * 60 * 60)) {
+        io.sockets.emit('info', '<center><strong>Time interval too large to query...</strong></center>');
+        return;
+    }
+    // fetch flm data from database
+    var queryStr = 'SELECT * FROM flmdata WHERE timestamp >= \'' + fromTimestamp + '\' AND timestamp <= \'' + toTimestamp + '\';';
+    var query = database.query(queryStr, function (err, rows, fields) {
+                               if (err) throw err;
+                               var series = {};
+                               for (var i in rows) {
+                               if (series[rows[i].sensor] == null) series[rows[i].sensor] = new Array();
+                               series[rows[i].sensor].push([rows[i].timestamp * 1000, rows[i].value]);
+                               };
+                               // reduce the timeseries length through averages
+                               if (timeLen > (2 * 60 * 60)) {
+                               for (var s in series) {
+                               var n = 0,
+                               avg = 0;
+                               var ser = new Array();
+                               for (var v in series[s]) {
+                               // series[s][v] delivers the single series [timestamp,value]
+                               n++;
+                               avg += parseInt(series[s][v][1]);
+                               tim = new Date(series[s][v][0]);
+                               if (tim.getSeconds() == 0) {
+                               avg = Math.round(avg / n);
+                               ser.push([series[s][v][0], avg]);
+                               avg = 0;
+                               n = 0;
+                               };
+                               };
+                               series[s] = ser;
+                               };
+                               };
+                               // send data to requester
+                               io.sockets.emit('series', series);
+                               // ...and close the database again
+                               database.end();
+                               });
+}
+// connect to database
+database.connect(function (err) {
+                 if (err) throw err;
+                 console.log('Database flm successfully connected');
+                 });
+
+// create the persistence if it does not exist
+var createTabStr = 'CREATE TABLE IF NOT EXISTS flmdata' + '( sensor CHAR(32),' + '  timestamp CHAR(10),' //'  timestamp TIMESTAMP,'
++ '  value CHAR(5),' + '  unit CHAR(5),' + '  UNIQUE KEY (sensor, timestamp),' + '  INDEX idx_time (timestamp)' + ');';
+database.query(createTabStr, function (err, res) {
+               if (err) {
+               database.end();
+               throw err;
+               }
+               console.log('Create table successful...');
+               });

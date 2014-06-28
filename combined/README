@@ -1,0 +1,8 @@
+**** Under construction ****
+
+This folder contains a combined version of the persistence, panel, and chart service;
+so there is no need to run the other scripts separately.
+
+See the corresponding folders for intent and description.
+
+(c) 2014, Markus Gebhard, under MIT License - see License.txt
