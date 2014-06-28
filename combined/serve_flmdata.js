@@ -32,6 +32,25 @@ var dbaccess = {
   database: 'flm'
 };
 var database = mysql.createConnection( dbaccess );
+// connect to database
+database.connect(function (err) {
+                 if (err) throw err;
+                 console.log('Database flm successfully connected');
+                 });
+// define the persistence if it does not exist
+var createTabStr = 'CREATE TABLE IF NOT EXISTS flmdata' 
+                 + '( sensor CHAR(32),' 
+                 + '  timestamp CHAR(10),' //'  timestamp TIMESTAMP,'
+                 + '  value CHAR(5),' 
+                 + '  unit CHAR(5),' 
+                 + '  UNIQUE KEY (sensor, timestamp),' 
+                 + '  INDEX idx_time (timestamp)' + ');';
+// and send the create command to the database
+database.query(createTabStr, function (err, res) {
+  if (err) { database.end();
+             throw err; };
+  console.log('Create/connect to table successful...');
+});
 
 // use mqtt for client, socket.io for push,
 var mqtt = require('mqtt');
@@ -49,51 +68,43 @@ ad.start();
 var mdnsbrowser = mdns.createBrowser(mdns.tcp('mqtt'));
 // handle detected devices
 mdnsbrowser.on('serviceUp', function (service) {
-               console.log('detected:' + service.addresses[0] + ':' + service.port);
-               var mqttclient = mqtt.createClient(service.port, service.addresses[0]);
-// for the persistence subscription is needed:
-               mqttclient.subscribe('/sensor/#');
+  console.log('detected:' + service.addresses[0] + ':' + service.port);
+  var mqttclient = mqtt.createClient(service.port, service.addresses[0]);
+  // for the persistence subscription is needed:
+  mqttclient.subscribe('/sensor/#');
+  // handle mqtt messages
+  mqttclient.on('message', function (topic, payload) {
+    var subtopics = topic.split('/');
+    switch (subtopics[3]) {
+      case 'gauge':
+        var gauge = JSON.parse(payload);
+        // FLM gauges consist of timestamp, value, and unit
+        if (gauge.length == 3) {
+          var insertStr = 'INSERT INTO flmdata' + ' (sensor, timestamp, value, unit)' + ' VALUES ("' + subtopics[2] + '",' + ' "' + gauge[0] + '",' + ' "' + gauge[1] + '",' + ' "' + gauge[2] + '")' + ' ON DUPLICATE KEY UPDATE' + ' sensor = VALUES(sensor),' + ' timestamp = VALUES(timestamp),' + ' value = VALUES(value),' + ' unit = VALUES(unit);';
+          database.query(insertStr, function (err, res) {
+            if (err) {
+              database.end();
+              throw err;
+            }; // if
+          }); // database.query
+        } // gauge length 3 - you may define further gauge lengths to be persisted
+        break;
+      case 'counter':
+        break;
+    } // switch
+    // emit received message to socketio listener
+    io.sockets.emit('mqtt', { 'topic': topic,
+                              'payload': payload });
+  }); // mqttclient.on                  
 // handle socketio requests
-               io.on('connection', function (socket) {
-                     // handle database query request
-                     socket.on('query', function (data) {
-                               handlequery(data);
-                               });
-                     // handle subscription request
-                     socket.on('subscribe', function (data) {
-                               mqttclient.subscribe(data.topic);
-                               });
-                     // Handle database write and push the message to socket.io
-                     mqttclient.on('message', function (topic, payload) {
-                                   var subtopics = topic.split('/');
-                                   switch (subtopics[3]) {
-                                   case 'gauge':
-                                   var gauge = JSON.parse(payload);
-                                   // FLM gauges consist of timestamp, value, and unit
-                                   if (gauge.length == 3) {
-                                   // use the following conversion when using mySQL TIMESTAMP and replace gauge[0]
-                                   //var date = new Date(gauge[0]*1000).toISOString().slice(0, 19).replace('T', ' ');
-                                   var insertStr = 'INSERT INTO flmdata' + ' (sensor, timestamp, value, unit)' + ' VALUES ("' + subtopics[2] + '",' + ' "' + gauge[0] + '",' + ' "' + gauge[1] + '",' + ' "' + gauge[2] + '")' + ' ON DUPLICATE KEY UPDATE' + ' sensor = VALUES(sensor),' + ' timestamp = VALUES(timestamp),' + ' value = VALUES(value),' + ' unit = VALUES(unit);';
-                                   database.query(insertStr, function (err, res) {
-                                                  if (err) {
-                                                  database.end();
-                                                  throw err;
-                                                  }
-                                                  }); // database.query
-                                   } // gauge length 3 - you may define further gauge lengths to be persisted
-                                   break;
-                                   case 'counter':
-                                   break;
-                                   } // switch
-                                   
-                                   // emit received message to socketio listener
-                                   socket.emit('mqtt', {
-                                               'topic': topic,
-                                               'payload': payload
-                                               });
-                                   });
-                     });
-               });
+  io.on('connection', function (socket) {
+    // handle database query request
+    socket.on('query', function (data) { handlequery(data); });
+    // handle additional subscription request(s)
+    socket.on('subscribe', function (data) { mqttclient.subscribe(data.topic); });
+  }); // io.on
+}); // mdnsbrowser.on
+
 mdnsbrowser.start();
 
 // Serve the index.html page
@@ -200,20 +211,4 @@ function handlequery(data) {
                                io.sockets.emit('series', series);
                                });
 }
-// connect to database
-database.connect(function (err) {
-                 if (err) throw err;
-                 console.log('Database flm successfully connected');
-                 });
 
-// define the persistence if it does not exist
-var createTabStr = 'CREATE TABLE IF NOT EXISTS flmdata' + '( sensor CHAR(32),' + '  timestamp CHAR(10),' //'  timestamp TIMESTAMP,'
-+ '  value CHAR(5),' + '  unit CHAR(5),' + '  UNIQUE KEY (sensor, timestamp),' + '  INDEX idx_time (timestamp)' + ');';
-// and send the create command to the database
-database.query(createTabStr, function (err, res) {
-               if (err) {
-               database.end();
-               throw err;
-               }
-               console.log('Create table successful...');
-               });
