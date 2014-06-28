@@ -107,6 +107,12 @@
          });
          socket.emit('subscribe', {topic : '/sensor/#'});
         });
+        $(document).ready(function() {
+        // Selection button handling
+          $("#sel_pnl").click( function() { window.location = 'index.html'; });
+          $("#sel_cnt").click( function() { window.location = 'panel.html'; });
+          $("#sel_cht").click( function() { window.location = 'chart.html'; });
+        });
     </script>
   </head>
   <body>
@@ -132,6 +138,11 @@
         </div>
         <div class="footer">
         <small><p class="text-center">FLM MQTT Panel, based on <a href="http://github.com/fabaff/mqtt-panel">mqtt-panel</a> with the corresponding &copy;</small>
+    </div>
+    <div align="center">
+      <button class="btn btn-primary btn-sm" id="sel_pnl">Panel</button>
+      <button class="btn btn-primary btn-sm" id="sel_cnt">Panel with Counters</button>
+      <button class="btn btn-primary btn-sm" id="sel_cht">Chart</button>
     </div>
   </body>
 </html>

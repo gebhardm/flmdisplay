@@ -1,7 +1,7 @@
-**** Under construction ****
-
 This folder contains a combined version of the persistence, panel, and chart service;
 so there is no need to run the other scripts separately.
+
+Start it with ./flmdata.sh after completing the required setup.
 
 See the corresponding folders for intent and description.
 

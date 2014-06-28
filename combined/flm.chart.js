@@ -1,5 +1,5 @@
 /* Fluksometer chart plotting script;
-   retreives data stored via node persist_mqtt.js and
+   retrieves data stored via node persist_mqtt.js and
    served by node serve_chart.js
 
    uses the flotcharts.org plotting library - with the
@@ -102,15 +102,9 @@ $(document).ready(function() {
       emit();
     });
     // Selection button handling
-    $("#panel").click( function() {
-      location.reload(true);
-    });
-    $("#counter").click( function() {
-      location.reload(true);
-    });
-    $("#chart").click( function() {
-      location.reload(true);
-    });
+    $("#sel_pnl").click( function() { window.location = 'index.html'; });
+    $("#sel_cnt").click( function() { window.location = 'panel.html'; });
+    $("#sel_cht").click( function() { window.location = 'chart.html'; });
 });
 
 // emit the query request to the server part

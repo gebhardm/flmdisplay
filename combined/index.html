@@ -16,24 +16,12 @@
     <!-- socket.io for communication -->
     <script type="text/javascript" src="js/socket.io.js"></script>
     <script type="text/javascript">
-        $(document).ready(function() {
-                          // Selection button handling
-                          $("#panel").click( function() {
-                                            location.reload(true);
-                                            });
-                          $("#counter").click( function() {
-                                            location.reload(true);
-                                              });
-                          $("#chart").click( function() {
-                                            location.reload(true);
-                                            });
-                          });
         // objects containing the actual sensor data
-        var sensors = {}, readings = {};
+          var sensors = {}, readings = {};
         // create an array of sensor values to pass on to a graph
-        var sensorvalues = {}, numgauge = 0;
+          var sensorvalues = {}, numgauge = 0;
         // link to the web server's IP address for socket connection
-        var socket = io.connect(location.host);
+          var socket = io.connect(location.host);
             socket.on('connect', function () {
                 socket.on('mqtt', function (msg) {
                     // split the received message at the slashes
@@ -96,15 +84,16 @@
          });
          socket.emit('subscribe', {topic : '/sensor/#'});
         });
+        $(document).ready(function() {
+        // Selection button handling
+          $("#sel_pnl").click( function() { window.location = 'index.html'; });
+          $("#sel_cnt").click( function() { window.location = 'panel.html'; });
+          $("#sel_cht").click( function() { window.location = 'chart.html'; });
+        });
     </script>
   </head>
 
   <body>
-      <div align=\"center\">
-          <button class=\"btn btn-primary btn-sm\" id=\"panel\">Panel</button>
-          <button class=\"btn btn-primary btn-sm\" id=\"counter\">Panel with Counters</button>
-          <button class=\"btn btn-primary btn-sm\" id=\"chart\">Chart</button>
-      </div>
     <div id="wrap">
       <div class="container">
         <div class="page-header"><h1><b>Fluksometer Readings</b></h1></div>
@@ -122,6 +111,11 @@
 
         <div class="footer">
         <small><p class="text-center">FLM MQTT Panel, based on <a href="http://github.com/fabaff/mqtt-panel">mqtt-panel</a> with the corresponding &copy;</small>
+    </div>
+    <div align="center">
+      <button class="btn btn-primary btn-sm" id="sel_pnl">Panel</button>
+      <button class="btn btn-primary btn-sm" id="sel_cnt">Panel with Counters</button>
+      <button class="btn btn-primary btn-sm" id="sel_cht">Chart</button>
     </div>
   </body>
 </html>

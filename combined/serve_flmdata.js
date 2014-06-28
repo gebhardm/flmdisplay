@@ -26,11 +26,13 @@ var path = require('path');
 var mysql = require('mysql');
 // prepare the database access - use your db's values
 var dbaccess = {
-host: 'localhost',
-user: 'pi',
-password: 'raspberry',
-database: 'flm'
+  host: 'localhost',
+  user: 'pi',
+  password: 'raspberry',
+  database: 'flm'
 };
+var database = mysql.createConnection( dbaccess );
+
 // use mqtt for client, socket.io for push,
 var mqtt = require('mqtt');
 var io = require('socket.io')(http); // the socket listens on the http port
@@ -194,8 +196,6 @@ function handlequery(data) {
                                };
                                // send data to requester
                                io.sockets.emit('series', series);
-                               // ...and close the database again
-                               database.end();
                                });
 }
 // connect to database
@@ -204,9 +204,10 @@ database.connect(function (err) {
                  console.log('Database flm successfully connected');
                  });
 
-// create the persistence if it does not exist
+// define the persistence if it does not exist
 var createTabStr = 'CREATE TABLE IF NOT EXISTS flmdata' + '( sensor CHAR(32),' + '  timestamp CHAR(10),' //'  timestamp TIMESTAMP,'
 + '  value CHAR(5),' + '  unit CHAR(5),' + '  UNIQUE KEY (sensor, timestamp),' + '  INDEX idx_time (timestamp)' + ');';
+// and send the create command to the database
 database.query(createTabStr, function (err, res) {
                if (err) {
                database.end();
