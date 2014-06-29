@@ -86,8 +86,6 @@ This shows the respective versions of node and the node package manager.
 
 To install mdns with npm on a Raspberry Pi you need to have installed also the avahi compatibility library.
 
-> sudo apt-get update
-
 > sudo apt-get install libavahi-compat-libdnssd-dev
 
 Now install the mqtt, mdns, mysql, and socket.io modules in your home directory with
@@ -124,7 +122,7 @@ After start the script checks if the persistence table in the database FLM exist
 
 With the script also a web server is started that you can reach on the RasPi’s IP address from any computer in the LAN; access the visualization on port 1080
 
-> http://<RasPi IP>:1080
+> http://"RasPi IP address":1080
 
 Note that the service also advertises its existence; check with a Bonjour browser; so alternatively you may access the service also (at least on a Mac) via
 
