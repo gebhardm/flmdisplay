@@ -14,6 +14,7 @@ Set up the environment/Get all the pieces in place
 ### Update
 
 > sudo apt-get update
+
 > sudo apt-get upgrade
 
 ### Git
@@ -37,13 +38,19 @@ Run a simple security script. You can change your root password for mySQL here o
 Set up the mySQL database to have all the tables and settings that the scripts will expect
 
 > mysql -u root -p
+
 > mysql> create database flm;
+
 > mysql> use flm;
 
 > mysql> create user 'pi'@'localhost' identified by 'raspberry';
+
 > mysql> grant all privileges on flm.* to 'pi'@'localhost';
+
 > mysql> flush privileges;
+
 > mysql> set password for 'pi'@'localhost' = password('raspberry');
+
 > mysql> quit
 
 ### node.js
@@ -54,7 +61,9 @@ You may need to
 if the add-apt-repository below fails.
 
 > sudo add-apt-repository ppa:chris-lea/node.js
+
 > sudo apt-get update
+
 > sudo apt-get install nodejs build-essential libavahi-compat-libdnssd-dev
 
 ### The script
@@ -62,11 +71,13 @@ if the add-apt-repository below fails.
 Install the script(s) using git below or download them as a zip file directly from [github](http://github.com/gebhardm/flmdisplay)
 
 > cd ~
+
 > git clone git://github.com/gebhardm/flmdisplay/
 
 Install the required node modules in your home directory
 
 > cd ~
+
 > npm install mqtt socket.io mdns mysql
 
 After installation you'll recognize a new folder node_modules containing the required stuff.
@@ -74,6 +85,7 @@ After installation you'll recognize a new folder node_modules containing the req
 Now you may start the combined script
 
 > cd combined/
+
 > ./flmdata.sh
 
 If you have gotten through without errors then everything should be up and running. If you want to double check try 
