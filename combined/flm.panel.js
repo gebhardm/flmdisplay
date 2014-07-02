@@ -52,14 +52,15 @@
 </tr>';
                                 $('#gauge').append(tablerow);
                             };
-                            if (gaugeseries[sensor].length == 50)
+                            if (gaugeseries[sensor].length == 60)
                                 gaugeseries[sensor].shift();
                             gaugeseries[sensor].push(gauge[sensor]);
                             // now pass the data to the html part
                             $('#sensor'+sensor).html('(Sensor ' + sensor + ')');
                             $('#value'+sensor).html(sensors[sensor]);
                             $('#valueSparkline'+sensor).sparkline(gaugeseries[sensor], {
-                                type: 'line', width: '200', height: '50'});
+                                type: 'line', width: '200', height: '50',
+                                tooltipFormat: '<span style="font-size:10pt; color:black; background-color:white; margin:0pt;">{{prefix}}{{x}}:{{y}}{{suffix}}</span>'});
                             break;
                         case 'counter':
                             var date = new Date(value[0]*1000); // the timestamp

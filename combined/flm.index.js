@@ -51,14 +51,15 @@
 </tr>';
                                 $('table').append(tablerow);
                             };
-                            if (sensorvalues[sensor].length == 50)
+                            if (sensorvalues[sensor].length == 60)
                                 sensorvalues[sensor].shift();
                             sensorvalues[sensor].push(readings[sensor]);
                             // now pass the data to the html part
                             $('#sensor'+sensor).html('(Sensor ' + sensor + ')');
                             $('#value'+sensor).html(sensors[sensor]);
                             $('#valueSparkline'+sensor).sparkline(sensorvalues[sensor], {
-                                type: 'line', width: '200', height: '50'});
+                                type: 'line', width: '200', height: '50',
+                                tooltipFormat: '<span style="font-size:10pt; color:black; background-color:white; margin:0pt;">{{prefix}}{{x}}:{{y}}{{suffix}}</span>' });
                             break;
                         case 'counter': break;
                         default: break;
