@@ -171,19 +171,11 @@ function httphandler(req, res) {
 
 // define what shall be done on a io request
 function handlequery(data) {
-    /* received data package has following structure:
-	data = {
-	fromDate : YYYYMMDD
-	fromTime : HHMMSS
-	toDate : YYYYMMDD
-	toTime : HHMMSS
-	}
-	*/
     // send message that data load it started...
     io.sockets.emit('info', '<center>Loading...</center>');
-    // compute time interval to query
-    var fromTimestamp = Date.parse(data.fromDate + ' ' + data.fromTime) / 1000;
-    var toTimestamp = Date.parse(data.toDate + ' ' + data.toTime) / 1000;
+    // get time interval to query
+    var fromTimestamp = data.fromTimestamp;
+    var toTimestamp = data.toTimestamp;
     // check delivered interval
     if (toTimestamp < fromTimestamp) {
         var temp = fromTimestamp;

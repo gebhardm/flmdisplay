@@ -110,10 +110,8 @@ $(document).ready(function() {
 // emit the query request to the server part
 function emit() {
   var data = {};
-  data.fromDate = fromDate;
-  data.fromTime = fromTime;
-  data.toDate = toDate;
-  data.toTime = toTime;      
+  data.fromTimestamp = Date.parse(fromDate + 'T' + fromTime) / 1000;
+  data.toTimestamp = Date.parse(toDate + 'T' + toTime) / 1000;
   $("#chart").html('');
   $("#info").html('');
   socket.emit('query', data);
