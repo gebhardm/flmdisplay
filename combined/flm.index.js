@@ -59,7 +59,7 @@
                             $('#value'+sensor).html(sensors[sensor]);
                             $('#valueSparkline'+sensor).sparkline(sensorvalues[sensor], {
                                 type: 'line', width: '200', height: '50',
-                                tooltipFormat: '<span style="font-size:10pt; color:black; background-color:white; margin:0pt;">{{prefix}}{{x}}:{{y}}{{suffix}}</span>' });
+                                tooltipFormat: '<span class="text-info bg-info">{{x}}:{{y}}</span>' });
                             break;
                         case 'counter': break;
                         default: break;
