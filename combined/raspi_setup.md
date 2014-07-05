@@ -19,6 +19,10 @@ After reboot get the system up to date
 
 > sudo apt-get update && sudo apt-get upgrade
 
+As always, heed Dogbert's tech advice and do better more than less times a
+
+> sudo reboot
+
 ## Installing the database
 
 As the combined script stores Fluksometer data, a proper database must be installed; in my case it is MySQL.
