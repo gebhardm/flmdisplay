@@ -106,8 +106,11 @@ $(document).ready(function() {
 // emit the query request to the server part
 function emit() {
   var data = {};
-  data.fromTimestamp = Date.parse(fromDate + 'T' + fromTime) / 1000;
-  data.toTimestamp = Date.parse(toDate + 'T' + toTime) / 1000;
+  var from = Date.parse(fromDate + 'T' + fromTime + 'Z') / 1000;
+  var to   = Date.parse(toDate + 'T' + toTime + 'Z') / 1000;
+  var offset = new Date().getTimezoneOffset() * 60;
+  data.fromTimestamp = from + offset;
+  data.toTimestamp = to + offset;
   $("#chart").html('');
   $("#info").html('');
   socket.emit('query', data);
