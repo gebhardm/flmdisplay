@@ -23,6 +23,11 @@ socket.on('connect', function () {
 		case 'gauge':
                         // process currently only the FLM delivered values with timestamp
 			if (value.length == 3) {
+                                // check time difference of received value to current time
+                                // this is due to pulses being send on occurance, so potentially not realtime
+                                var diff = new Date().getTime() / 1000 - value[0];
+                                diff = (diff<0?-diff:diff);
+				if (diff > 10) break;
                                 // check if current sensor was already registered
 				var obj = series.filter(function(o) { return o.label == sensor; });
                                 // ...if not, register it
