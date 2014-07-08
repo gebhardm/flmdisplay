@@ -1,5 +1,3 @@
-// objects containing the actual sensor data as string and value
-var gauge = {};
 // link to the web server's IP address for socket connection
 var socket = io.connect(location.host);
 // prepare graph display
@@ -24,33 +22,17 @@ socket.on('connect', function () {
     // now compute the gauge
     switch (area) {
       case 'gauge':
-        // Sensor handling - transfer the current values from the payload
-        gauge["label"] = sensor;
-        if (value.length == null) {
-          gauge[sensor] = value;
-        } else {
-          switch (value.length) {
-            case 1:
-              gauge[sensor] = value[0];
-              break;
-            case 2:
-              gauge[sensor] = value[0];
-              break;
-            case 3:
-              gauge[sensor] = value[1];
-              break;
-            default: break;
-          } // if length
-        } // case gauge
-        // now pass the data to the graph display
-        series = [];
-        var serobj = {};
-        serobj["label"] = sensor;
-        serobj["data"] = [value[0],value[1]];
-        series.push(serobj);
-        $("graph").plot(series, options);
-        break;
-      case 'counter':
+        if (value.length == 3) {
+          var obj = series.filter(function(o) { return o.label == sensor; });
+		  if (obj[0] == null) {
+		    obj ={};
+		    obj.label = sensor;
+		    obj.data  = [value[0], value[1]];
+		    series.push(obj);
+		  }
+		  else obj[0].data.push([value[0], value[1]]);
+		  $("#graph").plot(series, options);
+		} // if length
         break;
       default: break;
     }
