@@ -3,9 +3,9 @@ var socket = io.connect(location.host);
 // prepare graph display
 var series = new Array();
 var options = {
-                xaxis: { mode: "time",
-                         timezone: "browser" },
-                yaxis: { min: 0 }
+xaxis: { mode: "time",
+timezone: "browser" },
+yaxis: { min: 0 }
 };
 // process socket connection
 socket.on('connect', function () {
@@ -21,38 +21,41 @@ socket.on('connect', function () {
 		// now compute the gauge
 		switch (area) {
 		case 'gauge':
-                        // process currently only the FLM delivered values with timestamp
+			// process currently only the FLM delivered values with timestamp
 			if (value.length == 3) {
-                                // check time difference of received value to current time
-                                // this is due to pulses being send on occurance, so potentially not realtime
-                                var diff = new Date().getTime() / 1000 - value[0];
-                                diff = (diff<0?-diff:diff);
+				// check time difference of received value to current time
+				// this is due to pulses being send on occurance, so potentially not realtime
+				var diff = new Date().getTime() / 1000 - value[0];
+				diff = (diff<0?-diff:diff);
 				if (diff > 10) break;
-                                // check if current sensor was already registered
+				// check if current sensor was already registered
 				var obj = series.filter(function(o) { return o.label == sensor; });
-                                // ...if not, register it
+				// flot.time requires UTC-like timestamps;
+				// see https://github.com/flot/flot/blob/master/API.md#time-series-data
+				var timestamp = value[0] * 1000;
+				// ...if not, register it
 				if (obj[0] == null) {
 					obj ={};
 					obj.label = sensor;
-					obj.data  = [value[0], value[1]];
+					obj.data  = [timestamp, value[1]];
 					series.push(obj);
 				}
 				// ...otherwise, push the current value
 				else { 
-                                        obj[0].data.push([value[0], value[1]]);
-                                        // reduce the datavolume to n values per series
-                                        if (obj[0].data.length > 300) {
-                                                var limit = obj[0].data[0][0];
-                                                var selGraph = new Array();
-                                                for (var i in series) {
-                                                        var selObj = {};
-                                                        selObj.label = series[i].label;
-                                                        selObj.data  = series[i].data.filter(function(v) {return v[0] > limit;});
-                                                        selGraph.push(selObj);
-                                                }
-                                                series = selGraph;
-                                        }
-                                }
+					obj[0].data.push([timestamp, value[1]]);
+					// reduce the datavolume to n values per series
+					if (obj[0].data.length > 300) {
+						var limit = obj[0].data[0][0];
+						var selGraph = new Array();
+						for (var i in series) {
+							var selObj = {};
+							selObj.label = series[i].label;
+							selObj.data  = series[i].data.filter(function(v) {return v[0] > limit;});
+							selGraph.push(selObj);
+						}
+						series = selGraph;
+					}
+				}
 				$("#graph").plot(series, options);
 			} // if length
 			break;
@@ -68,9 +71,9 @@ $(document).ready(function() {
 	$("#sel_cnt").click( function() { window.location = 'panel.html'; });
 	$("#sel_gph").click( function() { window.location = 'graph.html'; });
 	$("#sel_cht").click( function() { window.location = 'chart.html'; });
-        var offset = 20; //px
-        var width = $(document).width();
-        width -= offset * 2;
-        var height = width * 3 / 4;
-        $("#graph").width(width).height(height).offset({left:offset});
+	var offset = 20; //px
+	var width = $(document).width();
+	width -= offset * 2;
+	var height = width * 3 / 4;
+	$("#graph").width(width).height(height).offset({left:offset});
 });
