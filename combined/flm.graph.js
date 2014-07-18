@@ -29,8 +29,10 @@ socket.on('connect', function () {
 			if (value.length == 3) {
 				// check time difference of received value to current time
 				// this is due to pulses being send on occurance, so potentially not realtime
-				var diff = new Date().getTime() / 1000 - value[0];
+				var now = new Date().getTime();
+				var diff = now / 1000 - value[0];
 				diff = (diff < 0 ? -diff : diff);
+				// drop values that are older than 10 sec - as this is a realtime view
 				if (diff > 10)
 					break;
 				// check if current sensor was already registered
@@ -51,7 +53,8 @@ socket.on('connect', function () {
 				else {
 					obj[0].data.push([timestamp, value[1]]);
 					// move out values older than 5 minutes
-					if ((timestamp - obj[0].data[0][0]) > 300)
+					// !!! to be checked if working with pulse data !!!
+					if ((timestamp - obj[0].data[0][0]) > (300 * 1000))
 						obj[0].data.shift();
 				}
 				$("#graph").plot(series, options);
