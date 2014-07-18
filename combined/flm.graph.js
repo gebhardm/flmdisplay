@@ -53,9 +53,18 @@ socket.on('connect', function () {
 				else {
 					obj[0].data.push([timestamp, value[1]]);
 					// move out values older than 5 minutes
-					// !!! to be checked if working with pulse data !!!
-					if ((timestamp - obj[0].data[0][0]) > (300 * 1000))
-						obj[0].data.shift();
+					var limit = parseInt(obj[0].data[0]);
+					diff = ( timestamp - limit ) / 1000;
+					if ( diff > 300 ) {
+						var selGraph = new Array();
+						for (var i in series) {
+							var selObj = {};
+							selObj.label = series[i].label;
+							selObj.data = series[i].data.filter(function(v) {return v[0] > limit;});
+							selGraph.push(selObj);
+						}
+						series = selGraph;
+					}
 				}
 				$("#graph").plot(series, options);
 			} // if length
