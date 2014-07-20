@@ -3,6 +3,14 @@ var socket = io.connect(location.host);
 // prepare graph display
 var series = new Array();
 var options = {
+	series : {
+		lines : { show : true },
+		points : { show : true}
+	},
+	grid : {
+		hoverable : true,
+		clickable : true
+	},
 	xaxis : {
 		mode : "time",
 		timezone : "browser"
@@ -96,6 +104,7 @@ $(document).ready(function () {
 	var width = $(document).width();
 	width -= offset * 2;
 	var height = width * 3 / 4;
+	height = (height>600?600:height);
 	$("#graph").width(width).height(height).offset({
 		left : offset
 	});

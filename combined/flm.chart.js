@@ -49,6 +49,7 @@ socket.on('connect', function () {
 		var width = $(document).width();
 		width -= offset * 2;
 		var height = width * 3 / 4;
+		height = (height>600?600:height);
 		$("#chart").width(width).height(height).offset({
 			left : offset
 		});
