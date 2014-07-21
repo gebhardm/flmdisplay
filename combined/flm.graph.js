@@ -4,13 +4,18 @@ var socket = io.connect(location.host);
 var series = new Array();
 var options = {
 	series : {
-		lines : { show : true },
-		points : { show : true}
+		lines : { show : true, steps : true },
+		points : { show : false }
 	},
+/*
 	grid : {
 		hoverable : true,
 		clickable : true
 	},
+	crosshair : {
+		mode : "x"
+	},
+*/
 	xaxis : {
 		mode : "time",
 		timezone : "browser"
