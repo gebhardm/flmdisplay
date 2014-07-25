@@ -1,4 +1,4 @@
- # !/usr/bin / env node
+#!/usr/bin / env node
 
 /*
  * This is the combined script to serve a panel, chart and persistence service
