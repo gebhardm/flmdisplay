@@ -44,7 +44,7 @@ socket.on('connect', function () {
 				// this is due to pulses being send on occurance, so potentially not realtime
 				var now = new Date().getTime();
 				var diff = now / 1000 - value[0];
-				diff = (diff < 0 ? -diff : diff);
+				// diff = (diff < 0 ? -diff : diff);
 				// drop values that are older than 10 sec - as this is a realtime view
 				if (diff > 10)
 					break;
