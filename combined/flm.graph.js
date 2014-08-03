@@ -71,7 +71,7 @@ $(function () {
 					var now = new Date().getTime();
 					var diff = now / 1000 - value[0];
 					// drop values that are older than 10 sec - as this is a realtime view
-					if (diff > 10)
+					if (diff > 100)
 						break;
 					// check if current sensor was already registered
 					var obj = series.filter(function (o) {
