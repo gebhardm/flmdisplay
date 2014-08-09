@@ -24,21 +24,13 @@ $(function () {
 	// link to the web server's IP address for socket connection
 	var socket = io.connect(location.host);
 	// prepare graph display
-	var series = new Array();
+	var series = new Array();  // the received values
+	var selSeries = new Array(); // the selected series to show
 	var options = {
 		series : {
 			lines : { show : true, steps : true },
 			points : { show : false }
 		},
-/*
-		grid : {
-			hoverable : true,
-			clickable : true
-		},
-		crosshair : {
-			mode : "x"
-		},
-*/
 		xaxis : {
 			mode : "time",
 			timezone : "browser"
@@ -47,12 +39,9 @@ $(function () {
 			min : 0
 		}
 	};
-
 	// process socket connection
 	socket.on('connect', function () {
 		socket.on('mqtt', function (msg) {
-			// assign plotarea
-			var plot = $.plot("#graph", series, options);
 			// split the received message at the slashes
 			var message = msg.topic.split('/');
 			// the sensor message type is the third value
@@ -86,6 +75,14 @@ $(function () {
 						obj.label = sensor;
 						obj.data = [timestamp, value[1]];
 						series.push(obj);
+						// add graph select option
+						$('#choices').append("<div class='checkbox'>" +
+									"<small><label>" +
+									"<input type='checkbox' id='" + 
+									sensor + "' checked='checked'></input>" +
+									sensor + "</label></small>" +
+									"</div>"
+						);
 					}
 					// ...otherwise, push the current value
 					else {
@@ -104,13 +101,22 @@ $(function () {
 							series = selGraph;
 						}
 					}
-					plot.setData(series);
-					plot.draw();
 				} // if length
 				break;
 			default:
 				break;
 			}
+			// check the selected checkboxes
+			selSeries = [];
+			$("#choices").find("input:checked").each(function(){
+				var key = $(this).attr("id");
+				var s = series.filter(function (o) {
+					return o.label == key;
+				});
+				selSeries.push(s[0]);
+			});
+			// plot the selection
+			$.plot("#graph", selSeries, options);
 		});
 		socket.emit('subscribe', {
 			topic : '/sensor/#'

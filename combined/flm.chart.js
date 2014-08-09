@@ -13,6 +13,10 @@ Markus Gebhard, Karlsruhe, May 2014, (c) */
 // determine locally stored time interval
 var chart = new Array(); // the chart series to be displayed
 var options = {
+	series : {
+		lines : { show : true, steps : true },
+		points : { show : false }
+	},
 	xaxis : {
 		mode : "time",
 		timezone : "browser"
