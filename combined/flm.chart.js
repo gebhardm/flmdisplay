@@ -123,7 +123,6 @@ $(function () {
 			});
 		});
 	});
-});
 
 // emit the query request to the server part
 function emit() {
@@ -161,3 +160,5 @@ function refresh() {
 	$('#chart').html('');
 	$('#info').html('');
 }
+
+});
