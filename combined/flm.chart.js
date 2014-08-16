@@ -68,6 +68,7 @@ socket.on('connect', function () {
 				});
 				selChart.push(s[0]);
 			});
+			$("#info").html('');
 			$("#chart").plot(selChart, options);		
 		}
 		// and finally plot the graph
