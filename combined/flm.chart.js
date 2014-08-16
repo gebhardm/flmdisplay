@@ -82,8 +82,8 @@ socket.on('connect', function () {
 			// filter values within the selected time interval
 			for (var i in selChart) {
 				var selObj = {};
-				selObj["label"] = chart[i].label;
-				selObj["data"] = chart[i].data.filter(function (v) {
+				selObj["label"] = selChart[i].label;
+				selObj["data"] = selChart[i].data.filter(function (v) {
 						return v[0] >= selFrom && v[0] <= selTo
 					});
 				showChart.push(selObj);
