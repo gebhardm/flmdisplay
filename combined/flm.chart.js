@@ -1,22 +1,26 @@
 /* Fluksometer chart plotting script;
-retrieves data stored via node persist_mqtt.js and
-served by node serve_chart.js
+retrieves data stored via node persist_mqtt.js and served by
+node serve_chart.js
 
-uses the flotcharts.org plotting library - with the
+Uses the http://flotcharts.org plotting library - with the
 corresponding license
 
-this script under MIT-license, as is, without any
-warrenty
+This script under MIT-license, as is, without any warranty
 
-Markus Gebhard, Karlsruhe, May 2014, (c) */
+Markus Gebhard, Karlsruhe, May/August 2014, (c) */
 
 // determine locally stored time interval
-var chart = new Array(); // the received chart series 
+var chart = new Array(); // the received chart series
 var selChart = new Array(); // the chart to be displayed
 var options = {
 	series : {
-		lines : { show : true, steps : true },
-		points : { show : false }
+		lines : {
+			show : true,
+			steps : true
+		},
+		points : {
+			show : false
+		}
 	},
 	xaxis : {
 		mode : "time",
@@ -49,36 +53,36 @@ socket.on('connect', function () {
 			serobj["label"] = i;
 			serobj["data"] = res[i];
 			chart.push(serobj);
-		// add graph selection option
-		$('#choices').append("<div class='checkbox'>" +
-			"<small><label>" +
-			"<input type='checkbox' id='" +
-			i + "' checked='checked'></input>" +
-			i + "</label></small>" +
-			"</div>");
+			// add graph selection option
+			$('#choices').append("<div class='checkbox'>" +
+				"<small><label>" +
+				"<input type='checkbox' id='" +
+				i + "' checked='checked'></input>" +
+				i + "</label></small>" +
+				"</div>");
 		} //for
 		// process the chart selection
 		$("#choices").find("input").on("click", plotSelChart);
-		function plotSelChart () {
+		function plotSelChart() {
 			selChart = [];
 			$("#choices").find("input:checked").each(function () {
 				var key = $(this).attr("id");
 				var s = chart.filter(function (o) {
-					return o.label == key;
-				});
+						return o.label == key;
+					});
 				selChart.push(s[0]);
 			});
 			$("#info").html('');
-			$("#chart").plot(selChart, options);		
+			$("#chart").plot(selChart, options);
 		}
 		// and finally plot the graph
-		$("#info").text('');
+		$("#info").html('');
 		plotSelChart();
 		// process selection time interval
 		$("#chart").on("plotselected", function (event, range) {
 			var selFrom = range.xaxis.from.toFixed(0);
 			var selTo = range.xaxis.to.toFixed(0);
-			var showChart = new Array();
+			var details = new Array();
 			// filter values within the selected time interval
 			for (var i in selChart) {
 				var selObj = {};
@@ -86,9 +90,9 @@ socket.on('connect', function () {
 				selObj["data"] = selChart[i].data.filter(function (v) {
 						return v[0] >= selFrom && v[0] <= selTo
 					});
-				showChart.push(selObj);
+				details.push(selObj);
 			} //for
-			$("#chart").plot(showChart, options);
+			$("#chart").plot(details, options);
 			$("#info").html('<div align=\"center\"><button class=\"btn btn-primary btn-sm\" id=\"reset\">Reset</button></div>');
 			// redraw the queried data
 			$("#reset").on("click", function () {
@@ -137,7 +141,7 @@ $(document).ready(function () {
 	var offset = 20; //px
 	var width = $(document).width() - offset * 2;
 	var height = width * 3 / 4;
-	height = (height>600?600:height);
+	height = (height > 600 ? 600 : height);
 	$("#chart").width(width).height(height).offset({
 		left : offset
 	});
@@ -169,4 +173,3 @@ function emit() {
 	$("#info").html('');
 	socket.emit('query', data);
 }
-
