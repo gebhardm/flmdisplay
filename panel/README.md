@@ -8,16 +8,16 @@ An MQTT-panel adaptation to the flukso.net Fluksometer.
 
 The panel is capable to display realtime data from FLM sent MQTT messages using the format
 
-/sensor/<sensor id>/gauge [timestamp,value,unit]
+/sensor/"sensor id"/gauge [timestamp,value,unit]
 
 It is also capable to display messages provided through the FLM's MQTT broker with the same format as above or the simpler format
 
-/sensor/<sensor id>/gauge value
-/sensor/<senso id>/gauge [value,unit]
+/sensor/"sensor id"/gauge value
+/sensor/"sensor id"/gauge [value,unit]
 
 denoting the sensor-topic with gauge and an ID plus a payload of single value, single value with unit, and timestamp, value and unit. The latter may easily be published by, for example, an Arduino based sensor, for example on temperature or air pressure.
 
-Using the "panel.html" (http://<server ip>:1080/panel.html) also shows the MQTT messages with the format
+Using the "panel.html" (http://"server ip":1080/panel.html) also shows the MQTT messages with the format
 
 /sensor/<sensor id>/counter [timestamp, value, unit]
 
@@ -54,6 +54,8 @@ Have fun.
 
 Markus Gebhard, Karlsruhe, June/August 2014
 
+###Acknowledgements
+
 With the greatest acknowledgements to Fabian Affolter and Ryan Florence...
 
 The original MQTT panel by FabAff: https://github.com/fabaff/mqtt-panel
@@ -65,4 +67,4 @@ on https://github.com/agnat/node_mdns
 
 All code, corresponding to the sources, under MIT-license.
 
-Note: The script and html works also in other environment with node.js is installed; the screenshot FLM_mqtt_panel.png is actually made on my iMac...
+Note: The script and html works also in other environment with node.js is installed; the screenshots are actually taken on my iMac...
