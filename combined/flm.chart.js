@@ -1,21 +1,29 @@
 /* Fluksometer chart plotting script;
-retrieves data stored via node persist_mqtt.js and
-served by node serve_chart.js
+retrieves data stored via node persist_mqtt.js and served by
+node serve_chart.js
 
-uses the flotcharts.org plotting library - with the
+Uses the http://flotcharts.org plotting library - with the
 corresponding license
 
-this script under MIT-license, as is, without any
-warrenty
+This script under MIT-license, as is, without any warranty
 
-Markus Gebhard, Karlsruhe, May 2014, (c) */
+Markus Gebhard, Karlsruhe, May/August 2014, (c) */
 
 // determine locally stored time interval
-var chart = new Array(); // the chart series to be displayed
+var chart = new Array(); // the received chart series
+var selChart = new Array(); // the chart to be displayed
 var options = {
 	series : {
-		lines : { show : true, steps : true },
-		points : { show : false }
+		lines : {
+			show : true,
+			steps : true
+		},
+		points : {
+			show : false
+		}
+	},
+	grid : {
+		hoverable : true
 	},
 	xaxis : {
 		mode : "time",
@@ -32,6 +40,7 @@ var fromDate, fromTime, toDate, toTime; // the time interval borders
 
 // prepare channel to server
 var socket = io.connect(location.host);
+
 socket.on('connect', function () {
 	// get information to be printed within the chart div
 	socket.on('info', function (info) {
@@ -47,46 +56,67 @@ socket.on('connect', function () {
 			serobj["label"] = i;
 			serobj["data"] = res[i];
 			chart.push(serobj);
+			// add graph selection option
+			$('#choices').append("<div class='checkbox'>" +
+				"<small><label>" +
+				"<input type='checkbox' id='" +
+				i + "' checked='checked'></input>" +
+				i + "</label></small>" +
+				"</div>");
 		} //for
-		// size the output area
-		var offset = 20; //px
-		var width = $(document).width();
-		width -= offset * 2;
-		var height = width * 3 / 4;
-		height = (height>600?600:height);
-		$("#chart").width(width).height(height).offset({
-			left : offset
-		});
+		// process the chart selection
+		$("#choices").find("input").on("click", plotSelChart);
+		function plotSelChart() {
+			selChart = [];
+			$("#choices").find("input:checked").each(function () {
+				var key = $(this).attr("id");
+				var s = chart.filter(function (o) {
+						return o.label == key;
+					});
+				selChart.push(s[0]);
+			});
+			$("#info").html('');
+			$("#chart").plot(selChart, options);
+		}
 		// and finally plot the graph
-		$("#info").text('');
-		$("#chart").plot(chart, options);
+		$("#info").html('');
+		plotSelChart();
+		// process hover
+		$("#chart").on("plothover", function (event, pos, item) {
+			if (item) {
+				$("#tooltip").html(item.datapoint[1])
+				.css({top: item.pageY+5, left: item.pageX+5})
+				.fadeIn(200);
+			} else $("#tooltip").hide();
+		});
 		// process selection time interval
-		$("#chart").bind("plotselected", function (event, range) {
+		$("#chart").on("plotselected", function (event, range) {
 			var selFrom = range.xaxis.from.toFixed(0);
 			var selTo = range.xaxis.to.toFixed(0);
-			var selChart = new Array();
+			var details = new Array();
 			// filter values within the selected time interval
-			for (var i in chart) {
+			for (var i in selChart) {
 				var selObj = {};
-				selObj["label"] = chart[i].label;
-				selObj["data"] = chart[i].data.filter(function (v) {
+				selObj["label"] = selChart[i].label;
+				selObj["data"] = selChart[i].data.filter(function (v) {
 						return v[0] >= selFrom && v[0] <= selTo
 					});
-				selChart.push(selObj);
+				details.push(selObj);
 			} //for
-			$("#chart").plot(selChart, options);
+			$("#chart").plot(details, options);
 			$("#info").html('<div align=\"center\"><button class=\"btn btn-primary btn-sm\" id=\"reset\">Reset</button></div>');
 			// redraw the queried data
-			$("#reset").click(function () {
-				$("#chart").plot(chart, options);
+			$("#reset").on("click", function () {
+				$("#chart").plot(selChart, options);
 			});
 		});
 	});
 });
+
 // executed after rendering the complete page; alternative: $(function() {});
 $(document).ready(function () {
 	// set the time interval to the current time
-	$('#refresh').click(function () {
+	$('#refresh').on("click", function () {
 		var dNow = new Date();
 		var day = dNow.getDate();
 		day = (day < 10 ? '0' + day : day);
@@ -107,15 +137,33 @@ $(document).ready(function () {
 		// clear the chart area
 		$('#chart').html('');
 		$('#info').html('');
+		$('#choices').html('');
 	});
 	// prepare and emit the query request
-	$('#submit').click(function () {
+	$('#submit').on("click", function () {
 		fromDate = $('#fromDate').val();
 		fromTime = $('#fromTime').val();
 		toDate = $('#toDate').val();
 		toTime = $('#toTime').val();
+		$('#choices').html('');
 		emit();
 	});
+	// size the output area
+	var offset = 20; //px
+	var width = $(document).width() - offset * 2;
+	var height = width * 3 / 4;
+	height = (height > 600 ? 600 : height);
+	$("#chart").width(width).height(height).offset({
+		left : offset
+	});
+	// allow tooltip on datapoints
+	$("<div id='tooltip'></div>").css({
+		position : "absolute",
+		display : "none",
+		border : "1px solid #ccc",
+		padding : "2px",
+		opacity : 0.80
+	}).appendTo("body");
 	// Selection button handling
 	$("#sel_pnl").click(function () {
 		window.location = 'index.html';
