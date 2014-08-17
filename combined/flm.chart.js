@@ -22,6 +22,9 @@ var options = {
 			show : false
 		}
 	},
+	grid : {
+		hoverable : true
+	},
 	xaxis : {
 		mode : "time",
 		timezone : "browser"
@@ -78,6 +81,14 @@ socket.on('connect', function () {
 		// and finally plot the graph
 		$("#info").html('');
 		plotSelChart();
+		// process hover
+		$("#chart").on("plothover", function (event, pos, item) {
+			if (item) {
+				$("#tooltip").html(item.datapoint[1])
+				.css({top: item.pageY+5, left: item.pageX+5})
+				.fadeIn(200);
+			} else $("#tooltip").hide();
+		});
 		// process selection time interval
 		$("#chart").on("plotselected", function (event, range) {
 			var selFrom = range.xaxis.from.toFixed(0);
@@ -145,7 +156,14 @@ $(document).ready(function () {
 	$("#chart").width(width).height(height).offset({
 		left : offset
 	});
-
+	// allow tooltip on datapoints
+	$("<div id='tooltip'></div>").css({
+		position : "absolute",
+		display : "none",
+		border : "1px solid #ccc",
+		padding : "2px",
+		opacity : 0.80
+	}).appendTo("body");
 	// Selection button handling
 	$("#sel_pnl").click(function () {
 		window.location = 'index.html';
