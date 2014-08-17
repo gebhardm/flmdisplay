@@ -1,0 +1,68 @@
+##FLM Panel
+
+An MQTT-panel adaptation to the flukso.net Fluksometer.
+
+"serve_panel.js" is a JavaScript running on node.js. It serves as a MQTT message to socket.io pipe with an integrated simple http server. The provided page (index.html) displays data of all retrieved FLM sensor gauges; the panel.html includes the counters also and graph.html shows a corresponding flotcharts diagram.
+
+###Data retrieval
+
+The panel is capable to display realtime data from FLM sent MQTT messages using the format
+
+/sensor/<sensor id>/gauge [timestamp,value,unit]
+
+It is also capable to display messages provided through the FLM's MQTT broker with the same format as above or the simpler format
+
+/sensor/<sensor id>/gauge value
+/sensor/<senso id>/gauge [value,unit]
+
+denoting the sensor-topic with gauge and an ID plus a payload of single value, single value with unit, and timestamp, value and unit. The latter may easily be published by, for example, an Arduino based sensor, for example on temperature or air pressure.
+
+Using the "panel.html" (http://<server ip>:1080/panel.html) also shows the MQTT messages with the format
+
+/sensor/<sensor id>/counter [timestamp, value, unit]
+
+as provided by the FLM. Refer to the PNG screenshots for an impression.
+
+###How to use
+
+To run the script install node.js; easiest from http://github.com/joyent/node.
+Install node.js using the command sequence "git checkout v0.10.29-release", "./configure",  "make" and "sudo make install".
+
+Install the mqtt, mdns, and socket.io modules with "npm install mdns mqtt socket.io".
+Be aware that these modules evolve; there was an issue with incompatible changes using socket.io as v0.9 behaves differently than v1.0 - so, even though I tested the stuff, it may not work with a next version of the used modules...
+
+To install mdns with npm on a Raspberry Pi you need to have installed also the avahi compatibility library (note that mdns  throws some warnings on usage):
+
+  sudo apt-get update
+  sudo apt-get install libavahi-compat-libdnssd-dev
+
+###Usual execution
+
+On a running node.js installation just run the ./panel.sh script to start the server. 
+
+Note that with using mdns, the multicast DNS service discovery, the MQTT client address(es) are discovered automatically by serve_panel.js. So there is no further configuration needed (again, be aware of version incompatibilities within the environment used!)
+
+Point your wherever located browser to the web server's IP address port 1080, in my example http://192.168.0.70:1080 - the index.html page is loaded; to jump to panel.html and graph.html use the buttons at the page bottom.
+
+Note: You may change the serving http port in serve_panel.js, line 15:
+
+  var httpport = 1080;
+
+The corresponding web server is advertised using mdns with name 'flmpanel'; so using Bonjour/mDNS you should easily be capable to find it on your network. 
+
+Have fun.
+
+Markus Gebhard, Karlsruhe, June/August 2014
+
+With the greatest acknowledgements to Fabian Affolter and Ryan Florence...
+
+The original MQTT panel by FabAff: https://github.com/fabaff/mqtt-panel
+
+HTTP server part by Ryan Florence: https://gist.github.com/rpflorence/701407
+
+Also acknowledgements to the team providing the mDNS capability
+on https://github.com/agnat/node_mdns
+
+All code, corresponding to the sources, under MIT-license.
+
+Note: The script and html works also in other environment with node.js is installed; the screenshot FLM_mqtt_panel.png is actually made on my iMac...
