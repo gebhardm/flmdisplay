@@ -12,6 +12,14 @@ $(function () {
 	$("#sel_cht").click(function () {
 		window.location = 'chart.html';
 	});
+	// allow tooltip on datapoints
+	$("<div id='tooltip'></div>").css({
+		position : "absolute",
+		display : "none",
+		border : "1px solid #ccc",
+		padding : "2px",
+		opacity : 0.80
+	}).appendTo("body");
 	// set plot area boundaries
 	var offset = 20; //px
 	var width = $(document).width() - offset * 2;
@@ -20,7 +28,14 @@ $(function () {
 	$("#graph").width(width).height(height).offset({
 		left : offset
 	});
-
+	// compute hover
+	$("#graph").on("plothover", function (event, pos, item) {
+		if (item) {
+			$("#tooltip").html(item.datapoint[1])
+			.css({top:item.pageY+5, left:item.pageX+5})
+			.fadeIn(200);
+		} else $("#tooltip").hide();
+	});
 	// link to the web server's IP address for socket connection
 	var socket = io.connect(location.host);
 	// prepare graph display
@@ -30,6 +45,9 @@ $(function () {
 		series : {
 			lines : { show : true, steps : true },
 			points : { show : false }
+		},
+		grid : {
+			hoverable : true
 		},
 		xaxis : {
 			mode : "time",
