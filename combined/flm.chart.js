@@ -51,10 +51,13 @@ socket.on('connect', function () {
 		// clear any existing series
 		chart = [];
 		// format the data object
+		var color = 0;
 		for (var i in res) {
 			var serobj = {};
-			serobj["label"] = i;
-			serobj["data"] = res[i];
+			serobj.label = i;
+			serobj.data = res[i];
+			serobj.color = color;
+			color++;
 			chart.push(serobj);
 			// add graph selection option
 			$('#choices').append("<div class='checkbox'>" +
@@ -85,7 +88,7 @@ socket.on('connect', function () {
 		$("#chart").on("plothover", function (event, pos, item) {
 			if (item) {
 				$("#tooltip").html(item.datapoint[1])
-				.css({top: item.pageY+5, left: item.pageX+5})
+				.css({top: item.pageY+7, left: item.pageX+5})
 				.fadeIn(200);
 			} else $("#tooltip").hide();
 		});
@@ -97,8 +100,9 @@ socket.on('connect', function () {
 			// filter values within the selected time interval
 			for (var i in selChart) {
 				var selObj = {};
-				selObj["label"] = selChart[i].label;
-				selObj["data"] = selChart[i].data.filter(function (v) {
+				selObj.color = selChart[i].color;
+				selObj.label = selChart[i].label;
+				selObj.data = selChart[i].data.filter(function (v) {
 						return v[0] >= selFrom && v[0] <= selTo
 					});
 				details.push(selObj);
