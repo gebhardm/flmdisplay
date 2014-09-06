@@ -1,5 +1,3 @@
-#!/usr/bin / env node
-
 /*
  * This is the combined script to serve a panel, chart and persistence service
  * for Fluksometer data processing.
@@ -102,6 +100,13 @@ mdnsbrowser.on('serviceUp', function (service) {
 					}; // if
 				}); // database.query
 			} // gauge length 3 - you may define further gauge lengths to be persisted
+			if (gauge.length == 2) {
+				// enhance payload w/o timestamp by current timestamp
+				var now = parseInt(new Date().getTime()/1000);
+				var new_payload = [];
+				new_payload.push(now, gauge[0], gauge[1]);
+				payload = JSON.stringify(new_payload);
+			} // gauge length 2 is sent from Arduino sensors (in my case)
 			break;
 		case 'counter':
 			break;
