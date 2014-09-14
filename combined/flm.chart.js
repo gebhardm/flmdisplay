@@ -87,7 +87,14 @@ socket.on('connect', function () {
 		// process hover
 		$("#chart").on("plothover", function (event, pos, item) {
 			if (item) {
-				$("#tooltip").html(item.datapoint[1])
+                        	var itemTime = new Date(item.datapoint[0]);
+                        	var hrs = itemTime.getHours();
+                        	hrs = (hrs < 10 ? '0' + hrs : hrs);
+                        	var min = itemTime.getMinutes();
+                        	min = (min < 10 ? '0' + min : min);
+                        	var sec = itemTime.getSeconds();
+                        	sec = (sec < 10 ? '0' + sec : sec);
+                        	$("#tooltip").html(hrs+':'+min+':'+sec+' : '+item.datapoint[1])
 				.css({top: item.pageY+7, left: item.pageX+5})
 				.fadeIn(200);
 			} else $("#tooltip").hide();
@@ -166,7 +173,7 @@ $(document).ready(function () {
 		display : "none",
 		border : "1px solid #ccc",
 		padding : "2px",
-		opacity : 0.80
+		opacity : 0.90
 	}).appendTo("body");
 	// Selection button handling
 	$("#sel_pnl").click(function () {
