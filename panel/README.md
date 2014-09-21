@@ -61,11 +61,15 @@ Note: You may change the serving http port in *serve_panel.js*, *line 15*:
 
 	var httpport = 1080;
 
-The corresponding web server is advertised using mdns with name 'flmpanel'; so using Bonjour/mDNS you should easily be capable to find it on your network. 
+The corresponding web server is advertised using mdns with name 'flmpanel'; so using Bonjour/mDNS you should easily be capable to find it on your network.
 
-Have fun.
+Note that the original client *flm.js* files are maintained in the *../combined* version only; so, if the panel called in a browser does not work, usually the set links are broken. Reset them in your *panel-folder* by 
 
-Markus Gebhard, Karlsruhe, June/August 2014
+	rm flm.*
+	ln -s ../combined/flm.graph.js
+	ln -s ../combined/flm.index.js
+	ln -s ../combined/flm.panel.js
+
 
 ##Graph display
 To get a real-time experience there is a graph display that also allows switching off detected sensors. Play with it to your convenience; by default 5 minutes are displayed. I experienced that some device might don't like the amount of data kept locally, so you may change the displayed interval in the code of *flm.graph.js*, line 93:
@@ -88,3 +92,7 @@ on [Github of Agnat](https://github.com/agnat/node_mdns)
 All code, corresponding to the sources, under [MIT-license](http://mit-license.org/).
 
 Note: The script and html works also in other environment with node.js is installed; the screenshots are actually taken on my iMac...
+
+Have fun.
+
+Markus Gebhard, Karlsruhe, September 2014
