@@ -11,7 +11,10 @@ uses
 ************************************************************/
 var mysql = require('mysql');
 // set the listening port to your convenience
-var http = require('http').createServer(handler).listen(8080);
+var httpport = 8080; 
+// install the http handler and listener
+var http = require('http').createServer(handler).listen(httpport);
+// provide required access functionality
 var fs = require('fs');
 var url = require('url');
 var path = require('path');
