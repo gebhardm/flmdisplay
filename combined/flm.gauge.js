@@ -76,21 +76,3 @@ socket.on('connect', function () {
 		topic : '/sensor/#'
 	});
 });
-$(document).ready(function () {
-	// Selection button handling
-        $("#sel_gge").click(function () {
-                window.location = 'gauge.html';
-        });
-	$("#sel_pnl").click(function () {
-		window.location = 'index.html';
-	});
-	$("#sel_cnt").click(function () {
-		window.location = 'panel.html';
-	});
-	$("#sel_gph").click(function () {
-		window.location = 'graph.html';
-	});
-	$("#sel_cht").click(function () {
-		window.location = 'chart.html';
-	});
-});
