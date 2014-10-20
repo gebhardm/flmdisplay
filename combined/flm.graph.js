@@ -12,6 +12,9 @@ $(function () {
 	$("#sel_cht").click(function () {
 		window.location = 'chart.html';
 	});
+        $("#sel_gge").click(function () {
+                window.location = 'gauge.html';
+        });
 	// allow tooltip on datapoints
 	$("<div id='tooltip'></div>").css({
 		position : "absolute",

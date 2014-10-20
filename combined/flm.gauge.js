@@ -14,6 +14,7 @@ socket.on('connect', function () {
 		$('#message').html(msg.topic + ', ' + msg.payload);
 		var sensor = message[2]; // the sensor ID
 		var value = JSON.parse(msg.payload); // the transferred payload
+		var unit = '';
 		// now compute the gauge
 		switch (area) {
 		case 'gauge':
@@ -26,15 +27,18 @@ socket.on('connect', function () {
 				case 1:
 					sensors[sensor] = value[0];
 					gauge[sensor] = value[0];
+					unit = '';
 					break;
 				case 2:
 					sensors[sensor] = value[0] + ' ' + value[1];
 					gauge[sensor] = value[0];
+					unit = value[1];
 					break;
 				case 3:
 					var date = new Date(value[0] * 1000); // the timestamp
 					sensors[sensor] = value[1] + ' ' + value[2] + ' (' + date.toLocaleTimeString("en-EN") + ')';
 					gauge[sensor] = value[1];
+					unit = value[2];
 					break;
 				default:
 					break;
@@ -54,8 +58,9 @@ socket.on('connect', function () {
 				displays[sensor] = new JustGage({
 				  id: sensor,
 				  value: gauge[sensor],
+				  label: unit,
 				  min: 0,
-			  	  max: gauge[sensor]
+			  	  max: (gauge[sensor]>250?gauge[sensor]:250)
 				});
 			};
 			if (gaugeseries[sensor].length == 60)

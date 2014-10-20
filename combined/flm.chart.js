@@ -188,6 +188,9 @@ $(document).ready(function () {
 	$("#sel_cht").click(function () {
 		window.location = 'chart.html';
 	});
+        $("#sel_gge").click(function () {
+                window.location = 'gauge.html';
+        });
 });
 
 // emit the query request to the server part
