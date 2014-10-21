@@ -58,6 +58,7 @@ socket.on('connect', function () {
 				displays[sensor] = new JustGage({
 				  id: sensor,
 				  value: gauge[sensor],
+				  title: 'Gauge ' + numgauge,
 				  label: unit,
 				  min: 0,
 			  	  max: (gauge[sensor]>250?gauge[sensor]:250)
