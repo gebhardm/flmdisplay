@@ -49,15 +49,15 @@ socket.on('connect', function () {
 			if (displays[sensor] == null) {
 				numgauge++;
 				// put always two gauges into one table row
-				var tabcol = '<td style=\"vertical-align:middle;\">\
-															<h4>Gauge ' + numgauge + '<br/>' +
-					'<div id=\"' + sensor + '\"></div></td>';
+				var tabcell = '<div id="' + sensor + '"></div>';
 				if (numgauge % 2 == 1) {
-					var tabrow = '<tr id=\"gr' + numgauge + '\"></tr>';
+					var tabrow = '<tr>' +
+					'<td id="gc' + numgauge + '"></td>' +
+					'<td id="gc' + (numgauge + 1) + '"></td>' +
+					'</tr>';
 					$('#gauge').append(tabrow);
-					$('#gr' + numgauge).append(tabcol);
-				} else
-					$('#gr' + (numgauge - 1)).append(tabcol);
+				};
+				$('#gc' + numgauge).append(tabcell);
 				displays[sensor] = new JustGage({
 						id : sensor,
 						value : gauge[sensor],
