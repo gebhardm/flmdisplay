@@ -53,8 +53,8 @@ socket.on('connect', function () {
 				var tabcell = '<div id="' + sensor + '"></div>';
 				if (numgauge % 2 == 1) {
 					var tabrow = '<tr>' +
-					'<td id="gc' + numgauge + '"></td>' +
-					'<td id="gc' + (numgauge + 1) + '"></td>' +
+					'<td id="gc' + numgauge + '" width=50%></td>' +
+					'<td id="gc' + (numgauge + 1) + '" width=50%></td>' +
 					'</tr>';
 					$('#gauge').append(tabrow);
 				};
