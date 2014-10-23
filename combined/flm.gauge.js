@@ -2,6 +2,7 @@
 var sensors = {}, gauge = {}, displays = {};
 // create an array of sensor values to pass on to a graph
 var numgauge = 0;
+var limit = 0;
 // link to the web server's IP address for socket connection
 var socket = io.connect(location.host);
 socket.on('connect', function () {
@@ -58,13 +59,16 @@ socket.on('connect', function () {
 					$('#gauge').append(tabrow);
 				};
 				$('#gc' + numgauge).append(tabcell);
+				if (unit=='W') limit = 250;
+				else if (unit=='°C') limit = 50;
+				else limit = 100;
 				displays[sensor] = new JustGage({
 						id : sensor,
 						value : gauge[sensor],
 						title : sensor,
 						label : unit,
 						min : 0,
-						max : (gauge[sensor] > 250 ? gauge[sensor] : 250)
+						max : (gauge[sensor]>limit?gauge[sensor]:limit)
 					});
 			};
 			// now pass the data to the html part
