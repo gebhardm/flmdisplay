@@ -1,7 +1,7 @@
 // objects containing the actual sensor data as string and value
 var sensors = {}, gauge = {}, displays = {};
 // create an array of sensor values to pass on to a graph
-var gaugeseries = {}, numgauge = 0, numcounter = 0;
+var numgauge = 0;
 // link to the web server's IP address for socket connection
 var socket = io.connect(location.host);
 socket.on('connect', function () {
@@ -46,31 +46,32 @@ socket.on('connect', function () {
 			}
 			// create and fill an array of last n gauge
 			// also create the corresponding table row to show - only if it not yet exists
-			if (gaugeseries[sensor] == null) {
-				gaugeseries[sensor] = new Array();
+			if (displays[sensor] == null) {
 				numgauge++;
-				var tablerow = '<tr>\
-					<td width=\"40%\" style=\"vertical-align:middle;\"><h3>Gauge ' + numgauge + '</h3>\
-					<small id=\"sensor' + sensor + '\">(no value received)</small></td>\
-					<td style=\"vertical-align:middle;\"><div id=' + sensor + '></div></td>\
-					</tr>';
-				$('#gauge').append(tablerow);
+				// put always two gauges into one table row
+				var tabcol = '<td style=\"vertical-align:middle;\">\
+															<h4>Gauge ' + numgauge + '<br/>' +
+					'<div id=\"' + sensor + '\"></div></td>';
+				if (numgauge % 2 == 1) {
+					var tabrow = '<tr id=\"gr' + numgauge + '\"></tr>';
+					$('#gauge').append(tabrow);
+					$('#gr' + numgauge).append(tabcol);
+				} else
+					$('#gr' + (numgauge - 1)).append(tabcol);
 				displays[sensor] = new JustGage({
-				  id: sensor,
-				  value: gauge[sensor],
-				  title: 'Gauge ' + numgauge,
-				  label: unit,
-				  min: 0,
-			  	  max: (gauge[sensor]>250?gauge[sensor]:250)
-				});
+						id : sensor,
+						value : gauge[sensor],
+						title : sensor,
+						label : unit,
+						min : 0,
+						max : (gauge[sensor] > 250 ? gauge[sensor] : 250)
+					});
 			};
-			if (gaugeseries[sensor].length == 60)
-				gaugeseries[sensor].shift();
-			gaugeseries[sensor].push(gauge[sensor]);
 			// now pass the data to the html part
 			$('#sensor' + sensor).html('(Sensor ' + sensor + ')');
-                        displays[sensor].refresh(gauge[sensor]);
-			if (gauge[sensor] > displays[sensor].txtMaximum) displays[sensor].refresh(displays[sensor].originalValue,gauge[sensor]);
+			displays[sensor].refresh(gauge[sensor]);
+			if (gauge[sensor] > displays[sensor].txtMaximum)
+				displays[sensor].refresh(displays[sensor].originalValue, gauge[sensor]);
 			break;
 		case 'counter':
 			break;
