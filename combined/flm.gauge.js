@@ -1,5 +1,5 @@
 // objects containing the actual sensor data as string and value
-var sensors = {}, gauge = {}, displays = {};
+var gauge = {}, displays = {};
 // create an array of sensor values to pass on to a graph
 var numgauge = 0;
 var limit = 0;
@@ -21,23 +21,22 @@ socket.on('connect', function () {
 		case 'gauge':
 			// Sensor handling - transfer the current values from the payload
 			if (value.length == null) {
-				sensors[sensor] = value;
 				gauge[sensor] = value;
+				unit = '';
 			} else {
 				switch (value.length) {
 				case 1:
-					sensors[sensor] = value[0];
 					gauge[sensor] = value[0];
 					unit = '';
 					break;
 				case 2:
-					sensors[sensor] = value[0] + ' ' + value[1];
 					gauge[sensor] = value[0];
 					unit = value[1];
 					break;
 				case 3:
 					var date = new Date(value[0] * 1000); // the timestamp
-					sensors[sensor] = value[1] + ' ' + value[2] + ' (' + date.toLocaleTimeString("en-EN") + ')';
+					var now = new Date().getTime();
+					if ((now / 1000 - value[0]) > 60) value[1] = 0; // if too old, set to 0
 					gauge[sensor] = value[1];
 					unit = value[2];
 					break;
