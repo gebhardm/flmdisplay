@@ -69,12 +69,13 @@ socket.on('connect', function () {
 						min : 0,
 						max : (gauge[sensor]>limit?gauge[sensor]:limit)
 					});
+				$('#sensor' + sensor).html('(Sensor ' + sensor + ')');
 			};
 			// now pass the data to the html part
-			$('#sensor' + sensor).html('(Sensor ' + sensor + ')');
-			displays[sensor].refresh(gauge[sensor]);
 			if (gauge[sensor] > displays[sensor].txtMaximum)
 				displays[sensor].refresh(displays[sensor].originalValue, gauge[sensor]);
+			else
+				displays[sensor].refresh(gauge[sensor]);
 			break;
 		case 'counter':
 			break;
