@@ -9,7 +9,7 @@ To use the (combined) Fluksometer persistence and visualization script you have 
 
 ## Foundation
 
-Foundation to all following steps is a clean installation of Raspbian Debian Wheezy, in particular the version June 2014 (2014-06-20) as available on www.raspberrypi.org/downloads
+Foundation to all following steps is a clean installation of Raspbian Debian Wheezy. At time of writing this, it was version June 2014 (2014-06-20) as available on www.raspberrypi.org/downloads - I did not experience any issue with a newer fresh install nor after "sudo apt-get update && sudo apt-get upgrade"
 On fresh install perform the usual RasPi configuration steps
 
 > sudo raspi-config
