@@ -55,6 +55,11 @@ socket.on('connect', function () {
 					'<td id="gc' + numgauge + '" width=50%></td>' +
 					'<td id="gc' + (numgauge + 1) + '" width=50%></td>' +
 					'</tr>';
+					// using the bootsptrap grid classes
+					//var tabrow = '<div class="row">' +
+					//'<div class="col-sm-6" id="gc' + numgauge + '">&nbsp</div>' +
+					//'<div class="col-sm-6" id="gc' + (numgauge + 1) + '">&nbsp;</div>' +
+					//'</div>';
 					$('#gauge').append(tabrow);
 				};
 				$('#gc' + numgauge).append(tabcell);
