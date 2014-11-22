@@ -82,7 +82,7 @@ To run the persistence and visualization script install node.js; easiest from [h
 
 Note that the make process takes quite some while on a RasPi, so be patient; you may start the *make* process also directly (thus, without *nohup* and *&*); I chose to run it in the background with "*nohup make &*" allowing a logoff during processing. By the *tail* command you may have a look what’s currently going on. You'll recognize a finished *make* either if the *nohup.out* does not increase any further or the *tail* provides evidence that the *make* ended after all its compiling steps - if there where errors, hey, [Google is your friend](http://www.giyf.com)...
  
-After the *sude make install* check if node was installed properly 
+After the *sudo make install* check if node was installed properly 
 
 > node -v
 
