@@ -8,7 +8,7 @@
     <!-- Yahoo pure CSS -->
     <link href="css/pure-min.css" rel="stylesheet">
     <!-- jQuery -->
-    <script src="http://code.jquery.com/jquery-1.7.2.min.js"></script>
+    <script type="text/javascript" src="js/jquery.min.js"></script>
     <!-- socket.io for communication -->
     <script type="text/javascript" src="js/socket.io.js"></script>
     <!-- gauge graphics -->
@@ -18,14 +18,18 @@
     <script type="text/javascript" src="flm.gauge.js"></script>
   </head>
   <body>
-    <div id="wrap">
-      <div class="header">
-        <h1>Fluksometer Gauge</h1>
-      </div>
-      <div class="content">
-         <table id="gauge" class="pure-table pure-table-striped">
-         </table>
-      </div>
+    <div class="header" align="center">
+      <h1>Fluksometer Gauge</h1>
+    </div>
+    <div class="content" id="gauge">
+    </div>
+    <div class="layout-item" align="center">
+      <p>
+        FLM MQTT Gauge, using <a href="http://purecss.io">Pure</a> and 
+        <a href="http://justgage.com">JustGage</a> under the respective licenses.<br>
+        <a href="https://github.com/yahoo/pure-site/blob/master/LICENSE.md">Yahoo BSD</a> and 
+        <a href="http://opensource.org/licenses/mit-license.php">MIT</a>
+      </p>
     </div>
   </body>
 </html>

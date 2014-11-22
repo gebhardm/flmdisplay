@@ -48,13 +48,16 @@ socket.on('connect', function () {
 			// also create the corresponding table row to show - only if it not yet exists
 			if (displays[sensor] == null) {
 				numgauge++;
+				// get document width to scale table
+				var offset = 40;
+				var width = $(document).width() - offset * 2;
 				// put always two gauges into one table row
 				var tabcell = '<div id="' + sensor + '"></div>';
 				if (numgauge % 2 == 1) {
-					var tabrow = '<tr>' +
-					'<td id="gc' + numgauge + '" width=200px></td>' +
-					'<td id="gc' + (numgauge + 1) + '" width=200px></td>' +
-					'</tr>';
+					var tabrow = '<div class="pure-g">' +
+					'<div class="pure-u-1-2" id="gc' + numgauge + '"></div>' +
+					'<div class="pure-u-1-2" id="gc' + (numgauge + 1) + '"></div>' +
+					'</div>';
 					$('#gauge').append(tabrow);
 				};
 				$('#gc' + numgauge).append(tabcell);
