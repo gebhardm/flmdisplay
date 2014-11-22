@@ -9,7 +9,7 @@ To use the (combined) Fluksometer persistence and visualization script you have 
 
 ## Foundation
 
-Foundation to all following steps is a clean installation of Raspbian Debian Wheezy. Get the current distribution from [www.raspberrypi.org/downloads](www.raspberrypi.org/downloads).<br>
+Foundation to all following steps is a clean installation of Raspbian Debian Wheezy. Get the current distribution from [www.raspberrypi.org/downloads](http://www.raspberrypi.org/downloads).<br>
 At time of initially setting this up, it was version June 2014 (2014-06-20). I did not experience any issue with a newer fresh install (e.g. with version 2014-09-09) nor after *sudo apt-get update && sudo apt-get upgrade*.
 
 On fresh install perform the usual RasPi configuration steps
@@ -80,7 +80,7 @@ To run the persistence and visualization script install node.js; easiest from [h
 
 > sudo make install
 
-Note that the make process takes quite some while on a RasPi, so be patient; you may start the *make* process also directly (thus, without *nohup* and *&*); I chose to run it in the background with "*nohup make &*" allowing a logoff during processing. By the *tail* command you may have a look what’s currently going on. You'll recognize a finished *make* either if the *nohup.out* does not increase any further or the *tail* provides evidence that the *make* ended after all its compiling steps - if there where errors, hey, [Google is your friend](www.giyf.com)...
+Note that the make process takes quite some while on a RasPi, so be patient; you may start the *make* process also directly (thus, without *nohup* and *&*); I chose to run it in the background with "*nohup make &*" allowing a logoff during processing. By the *tail* command you may have a look what’s currently going on. You'll recognize a finished *make* either if the *nohup.out* does not increase any further or the *tail* provides evidence that the *make* ended after all its compiling steps - if there where errors, hey, [Google is your friend](http://www.giyf.com)...
  
 After the *sude make install* check if node was installed properly 
 
@@ -120,7 +120,7 @@ To start the **combined** persistence and visualization service, enter the *comb
 
 After start, the script checks if the persistence table in the database FLM exists; if not, it creates the corresponding table. Now the script discovers the existing Fluksometer MQTT brokers and subscribes to the sensor topics.
 
-If there is no message that your FLM was detected (the message shows the IP address and the corresponding port) something went wrong with the MDNS installation; check this - again, [Google is your friend](www.giyf.com)...
+If there is no message that your FLM was detected (the message shows the IP address and the corresponding port) something went wrong with the MDNS installation; check this - again, [Google is your friend](http://www.giyf.com)...
 
 On detection of the FLM, the script starts to insert received values (i.e. mqtt messages on topic **/sensor/#**) into the database for later retrieval, e.g. by the chart. This you may check also within the MySQL database by logging in and selecting from the corresponding data table
 
