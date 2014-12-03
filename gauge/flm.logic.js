@@ -13,17 +13,17 @@ client.onMessageArrived = onMessageArrived;
 client.connect({onSuccess:onConnect});
 
 function onConnect() {
-	alert("connected");
+	console.log("connected");
 	client.subscribe("/sensor/#");
 };
 
 function onConnectionLost(responseObj) {
-	if (responseObj.errorCode !== 0) alert("onConnectionLost:"+responseObj.errorMessage);
+	if (responseObj.errorCode !== 0) 
+		console.log("onConnectionLost:"+responseObj.errorMessage);
 };
 
 function onMessageArrived(msg) {
-	alert(msg);
-/*
+	console.log(msg);
 	// split the received message at the slashes
 	var message = msg.topic.split('/');
 	// the sensor message type is the third value
@@ -102,7 +102,4 @@ function onMessageArrived(msg) {
 	default:
 		break;
 	}
-*/
 };
-
-
