@@ -4,7 +4,7 @@ var gauge = {}, displays = {};
 var numgauge = 0;
 var limit = 0;
 // link to the web server's IP address for MQTT socket connection
-var client = new Paho.MQTT.Client("192.168.0.50", 1883, "FLMgauge");
+var client = new Paho.MQTT.Client("192.168.0.50", 8083, "", "FLMgauge");
 // define callback routines
 client.onConnect = onConnect;
 client.onConnectionLost = onConnectionLost;
@@ -22,19 +22,17 @@ function onConnectionLost(responseObj) {
 		console.log("onConnectionLost:"+responseObj.errorMessage);
 };
 
-function onMessageArrived(msg) {
-	console.log(msg);
+function onMessageArrived(message) {
 	// split the received message at the slashes
-	var message = msg.topic.split('/');
-	// the sensor message type is the third value
-	var area = message[3];
-	// pass the message topic and content to the html part
-	$('#message').html(msg.topic + ', ' + msg.payload);
-	var sensor = message[2]; // the sensor ID
-	var value = JSON.parse(msg.payloadString); // the transferred payload
+	var topic = message.destinationName.split('/');
+	var payload = message.payloadString;
+	// the sensor message type is the third value of the topic
+	var msgType = topic[3]; // gauge or counter
+	var sensor = topic[2]; // the sensor ID
+	var value = JSON.parse(payload); // the transferred payload
 	var unit = '';
 	// now compute the gauge
-	switch (area) {
+	switch (msgType) {
 	case 'gauge':
 		// Sensor handling - transfer the current values from the payload
 		if (value.length == null) {
