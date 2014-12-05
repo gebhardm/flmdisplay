@@ -69,10 +69,11 @@ function onMessageArrived(message) {
 			gaugeseries[sensor] = new Array();
 			numgauge++;
 			var tablerow = '<tr>' +
-				'<td width = \"40%\" style=\"vertical-align:middle;\"><h3>Gauge ' + numgauge + '</h3>'
+				'<td width = \"40%\" style=\"vertical-align:middle;\"><h4>Gauge ' + numgauge + '</h4>'
 				 + '<small id=\"sensor' + sensor + '\">(no value received)</small></td>'
 				 + '<td style=\"vertical-align:middle;\"><span id=\"valueSparkline' + sensor + '\">No values</span></td>'
-				 + '<td width=\"30%\" style=\"vertical-align:middle;\"><h4>&nbsp;<span id=\"value' + sensor + '\">Unknown</span></h4></td>'
+				 + '<td width=\"30%\" style=\"vertical-align:middle;\"><h4><span id=\"value' + sensor + '\">Unknown</span></h4>'
+				 + '<small id=\"cntr' + sensor + '\">(no value received)</small></td>'
 				 + '</tr>';
 			$('#gauge').append(tablerow);
 		};
@@ -80,38 +81,21 @@ function onMessageArrived(message) {
 			gaugeseries[sensor].shift();
 		gaugeseries[sensor].push(gauge[sensor]);
 		// now pass the data to the html part
-		$('#sensor' + sensor).html('(Sensor ' + sensor + ')');
+		$('#sensor' + sensor).html('Sensor ' + sensor);
+		$('#cntr' + sensor).html('Total ' + counters[sensor]);
 		$('#value' + sensor).html(sensors[sensor]);
 		$('#valueSparkline' + sensor).sparkline(gaugeseries[sensor], {
 			type : 'line',
 			width : '200',
 			height : '50',
-			tooltipFormat : '<span class=" text - info bg - info ">{{x}}:{{y}}</span>'
+			tooltipFormat : '<span class=\"text-info bg-info\">{{x}}:{{y}}</span>'
 		});
 		break;
 	case 'counter':
-		var date = new Date(value[0] * 1000); // the timestamp
-		if (counters[sensor] == null) {
-			numcounter++;
-			// put always two Counters into one table row
-			var tabcol = '<td style=\"vertical-align:middle;\">'
-				 + '<h4>Counter ' + numcounter + '<br/>'
-				 + '<small id=\"counter' + sensor + '\"></small></h4><br/>'
-				 + '<em><span id=\"count' + sensor + '\"></span></em></td>';
-			if (numcounter % 2 == 1) {
-				var tabrow = '<tr id=\"cr' + numcounter + '\"></tr>';
-				$('#counter').append(tabrow);
-				$('#cr' + numcounter).append(tabcol);
-			} else
-				$('#cr' + (numcounter - 1)).append(tabcol);
-		}
 		if (value[2] == 'Wh')
 			counters[sensor] = value[1] / 1000.0 + ' kWh';
 		else
 			counters[sensor] = value[1] + ' ' + value[2];
-		//+ ' (' + date.toLocaleTimeString(" en - EN ") + ')';
-		$('#counter' + sensor).html(sensor);
-		$('#count' + sensor).html(counters[sensor]);
 		break;
 	default:
 		break;
