@@ -69,9 +69,9 @@ function onMessageArrived(message) {
 			gaugeseries[sensor] = new Array();
 			numgauge++;
 			var tablerow = '<tr>' +
-				' < td width =  \ "40%\" style=\"vertical-align:middle;\"><h3>Gauge ' + numgauge + '</h3>'
+				'<td width = \"40%\" style=\"vertical-align:middle;\"><h3>Gauge ' + numgauge + '</h3>'
 				 + '<small id=\"sensor' + sensor + '\">(no value received)</small></td>'
-				 + '<td style=\"vertical-align:middle;\"><span id=\"valueSparkline' + sensor + '\">No values</span></td>' +
+				 + '<td style=\"vertical-align:middle;\"><span id=\"valueSparkline' + sensor + '\">No values</span></td>'
 				 + '<td width=\"30%\" style=\"vertical-align:middle;\"><h4>&nbsp;<span id=\"value' + sensor + '\">Unknown</span></h4></td>'
 				 + '</tr>';
 			$('#gauge').append(tablerow);
@@ -116,4 +116,4 @@ function onMessageArrived(message) {
 	default:
 		break;
 	}
-});
+};

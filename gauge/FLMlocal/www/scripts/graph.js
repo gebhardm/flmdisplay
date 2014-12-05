@@ -1,4 +1,4 @@
-$(function () {
+$(function() {
 	// allow tooltip on datapoints
 	$("<div id='tooltip'></div>").css({
 		position : "absolute",
@@ -11,7 +11,7 @@ $(function () {
 	var offset = 20; //px
 	var width = $(document).width() - offset * 2;
 	var height = width * 3 / 4;
-	height = (height > 600 ? 600 : height);
+	height = (height>600?600:height);
 	$("#graph").width(width).height(height).offset({
 		left : offset
 	});
@@ -86,7 +86,7 @@ $(function () {
 		// the sensor message type is the third value
 		var msgType = topic[3];
 		// pass the message topic and content to the html part
-		$('#message').html(message.destinationName.split + ', ' + payload);
+		$('#message').html(message.destinationName + ', ' + payload);
 		var sensor = topic[2]; // the sensor ID
 		var value = JSON.parse(payload); // the transferred payload
 		// now compute the gauge
@@ -117,12 +117,12 @@ $(function () {
 					color++;
 					series.push(obj);
 					// add graph select option
-					$('#choices').append("<div class='checkbox'>" +
-						"<small><label>" +
-						"<input type='checkbox' id='" +
-						sensor + "' checked='checked'></input>" +
-						sensor + "</label></small>" +
-						"</div>");
+					$('#choices').append("<div class='checkbox'>"
+						+ "<small><label>"
+						+ "<input type='checkbox' id='" + sensor
+						+ "' checked='checked'></input>" + sensor 
+						+ "</label></small>"
+						+ "</div>");
 				}
 				// ...otherwise, push the current value
 				else {
@@ -159,5 +159,5 @@ $(function () {
 		});
 		// plot the selection
 		$.plot("#graph", selSeries, options);
-	});
+	};
 });
