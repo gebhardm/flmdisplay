@@ -24,12 +24,14 @@ Next step here is to bring the corresponding files (gauge.html and flm.logic.js 
 <img src="FLM_pure_gauge.png" width=500px>
 
 #FLM local variant
-There is a complete folder that may be directly deployed in a Fluksometer v2.4.x web server folder. Folder [FLMlocal](FLMlocal/) contains all files necessary to make an FLM display the above gauges directly. Copy the content of the folder (the **/www/** directory) onto your Fluksometer - you do this most efficiently by using command **scp** on a linux machine or Mac (use WinSCP on a PC)
+There is a complete folder that may be directly deployed in a Fluksometer v2.4.x web server folder. Folder [FLMlocal](FLMlocal/) contains all files necessary to make an FLM display the above gauges directly. Copy the content of the folder (the **/www/** directory) onto your Fluksometer - you do this most efficiently by using command **scp** on a linux machine or Mac (use WinSCP on a PC); from within [www](FLMlocal/www/) call
 
-`scp * root@<flm ip address>:/www/`
+`scp -r * root@<flm ip address>:/www/`
 
-You are asked for the FLM's root-password to copy the files onto it. After copying you can access the gauges by
+You are asked for the FLM's root-password to copy the files including sub-folders onto it. After copying you can access the gauges by
 
 `<flm ip address>/gauge.html`
 
-from your browser.
+or from the FLM's landing page navigation in your browser.
+
+<img src="FLM_navigation.png" width=500px>
