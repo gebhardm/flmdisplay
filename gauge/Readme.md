@@ -14,24 +14,18 @@ becomes
 
 `var mqttclient = mqtt.createClient('<broker port, usually 1883>', '<broker ip address, usually the address of the computer e.g. Mosquitto is running on>')`
 
-Now you can start the ./gauge.sh and see gauges via the default index.html on localhost:1080.
+Now you can start the ./gauge.sh and see gauges via the default index.html on 
+
+`localhost:1080`.
 
 #Variant B
-With upcoming firmware versions of the Fluksometer (> v2.4) it will have websocket support onboard. Thus the socket.io becomes obsolete and mqttws31.js is used instead. For this a plain web server is required to serve gauge.html plus its included .js and .css files (from the respective folders). If you have set up variant A, you may test this with an v2.4-FLM instantly by pointing your browser to localhost:1080/gauge.html
+With upcoming firmware versions of the Fluksometer (> v2.4) it will have websocket support onboard. Thus the socket.io becomes obsolete and mqttws31.js is used instead. For this a plain web server is required to serve gauge.html plus its included .js and .css files (from the respective folders). If you have set up variant A, you may test this with an v2.4-FLM instantly by pointing your browser to
 
-Next step here is to bring the corresponding files (gauge.html and flm.logic.js plus includes) directly on the FLM - to be continued.
+`localhost:1080/gauge.html`
+
+This is the prerequisite to bring the corresponding files (gauge.html and flm.logic.js plus includes) directly onto the FLM - for that refer to the following variant.
 
 <img src="FLM_pure_gauge.png" width=500px>
 
 #FLM local variant
-There is a complete folder that may be directly deployed in a Fluksometer v2.4.x web server folder. Folder [FLMlocal](FLMlocal/) contains all files necessary to make an FLM display the above gauges directly. Copy the content of the folder (the **/www/** directory) onto your Fluksometer - you do this most efficiently by using command **scp** on a linux machine or Mac (use WinSCP on a PC); from within [www](FLMlocal/www/) call
-
-`scp -r * root@<flm ip address>:/www/`
-
-You are asked for the FLM's root-password to copy the files including sub-folders onto it. After copying you can access the gauges by
-
-`<flm ip address>/gauge.html`
-
-or from the FLM's landing page navigation in your browser.
-
-<img src="FLM_navigation.png" width=500px>
+For a variant that utilizes the MQTT websockets capability directly on the Fluksometer itself, see the dedicated repository [gebhardm/flmlocal](http://github.com/gebhardm/flmlocal) - here you will find extensions that may be copied directly into the FLM's web serving folder.
