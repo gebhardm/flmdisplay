@@ -34,11 +34,10 @@ $(function() {
     });
     // link to the web server's IP address for socket connection
     var socket = io.connect(location.host);
-    // prepare graph display
-    var series = new Array();
     // the received values
-    var selSeries = new Array();
+    var series = new Array(), sensors = {};
     // the selected series to show
+    var selSeries = new Array();
     var color = 0;
     var options = {
         series: {
@@ -64,18 +63,53 @@ $(function() {
     // process socket connection
     socket.on("connect", function() {
         socket.on("mqtt", function(msg) {
-            // split the received message at the slashes
-            var message = msg.topic.split("/");
-            // the sensor message type is the third value
-            var area = message[3];
-            // pass the message topic and content to the html part
-            $("#message").html(msg.topic + ", " + msg.payload);
-            var sensor = message[2];
-            // the sensor ID
-            var value = JSON.parse(msg.payload);
-            // the transferred payload
+            // determine topic and payload
+            var topic = msg.topic.split("/");
+            var payload = msg.payload;
+            switch (topic[1]) {
+              case "device":
+                handle_device(topic, payload);
+                break;
+
+              case "sensor":
+                handle_sensor(topic, payload);
+                break;
+
+              default:
+                break;
+            }
+        });
+        // handle the device information
+        function handle_device(topic, payload) {
+            var deviceID = topic[2];
+            if (topic[3] == "config") {
+                var config = JSON.parse(payload);
+                for (var obj in config) {
+                    var cfg = config[obj];
+                    if (cfg.enable == "1") {
+                        var sensorId = cfg.id;
+                        if (sensors[sensorId] == null) {
+                            sensors[sensorId] = new Object();
+                            sensors[sensorId].id = cfg.id;
+                            sensors[sensorId].name = cfg.function;
+                        } else sensors[sensorId].name = cfg.function;
+                    }
+                }
+            }
+        }
+        // handle the sensor information
+        function handle_sensor(topic, payload) {
+            var sensor = {};
+            var msgType = topic[3];
+            var sensorId = topic[2];
+            if (sensors[sensorId] == null) {
+                sensors[sensorId] = new Object();
+                sensor.id = sensorId;
+                sensor.name = sensorId;
+            } else sensor = sensors[sensorId];
+            var value = JSON.parse(payload);
             // now compute the gauge
-            switch (area) {
+            switch (msgType) {
               case "gauge":
                 // process currently only the FLM delivered values with timestamp
                 if (value.length == 3) {
@@ -87,7 +121,7 @@ $(function() {
                     if (diff > 100) break;
                     // check if current sensor was already registered
                     var obj = series.filter(function(o) {
-                        return o.label == sensor;
+                        return o.label == sensor.name;
                     });
                     // flot.time requires UTC-like timestamps;
                     // see https://github.com/flot/flot/blob/master/API.md#time-series-data
@@ -95,13 +129,13 @@ $(function() {
                     // ...if current sensor does not exist yet, register it
                     if (obj[0] == null) {
                         obj = {};
-                        obj.label = sensor;
+                        obj.label = sensor.name;
                         obj.data = [ timestamp, value[1] ];
                         obj.color = color;
                         color++;
                         series.push(obj);
                         // add graph select option
-                        $("#choices").append("<div class='checkbox'>" + "<small><label>" + "<input type='checkbox' id='" + sensor + "' checked='checked'></input>" + sensor + "</label></small>" + "</div>");
+                        $("#choices").append("<div class='checkbox'>" + "<small><label>" + "<input type='checkbox' id='" + sensor.name + "' checked='checked'></input>" + sensor.name + "</label></small>" + "</div>");
                     } else {
                         obj[0].data.push([ timestamp, value[1] ]);
                         // move out values older than 5 minutes
@@ -115,6 +149,7 @@ $(function() {
                                 selObj.data = series[i].data.filter(function(v) {
                                     return v[0] > limit;
                                 });
+                                selObj.color = series[i].color;
                                 selGraph.push(selObj);
                             }
                             series = selGraph;
@@ -138,6 +173,11 @@ $(function() {
             });
             // plot the selection
             $.plot("#graph", selSeries, options);
+            // and store the sensor configuration
+            sensors[sensorId] = sensor;
+        }
+        socket.emit("subscribe", {
+            topic: "/device/#"
         });
         socket.emit("subscribe", {
             topic: "/sensor/#"
