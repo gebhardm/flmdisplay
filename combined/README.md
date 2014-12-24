@@ -1,6 +1,6 @@
 # Combined version of persistence, panel and chart
 
-This folder contains a combined version of the persistence, panel, and chart service; so there is no need to run the other scripts separately.
+This folder contains a combined version of the persistence, panel, and chart service; so there is no need to run any of the scripts separately.
 
 Start it with *./flmdata.sh* after completing the required setup.
 
