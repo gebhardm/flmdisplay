@@ -42,6 +42,8 @@ prepare_database();
 // use mqtt for client, socket.io for push,
 var mqtt = require("mqtt");
 
+var mqttclient;
+
 var io = require("socket.io")(http);
 
 // the socket listens on the http port
@@ -65,6 +67,9 @@ mdnsbrowser.start();
 mdnsbrowser.on("serviceUp", function(service) {
     mdnsservice(service);
 });
+
+// store detected sensors
+var sensors = {};
 
 // connect to database and check/create required tables
 function prepare_database() {
@@ -96,8 +101,8 @@ function prepare_database() {
 }
 
 function mdnsservice(service) {
-    console.log("detected:" + service.addresses[0] + ":" + service.port);
-    var mqttclient = mqtt.createClient(service.port, service.addresses[0]);
+    console.log("Detected MQTT service on: " + service.addresses[0] + ":" + service.port);
+    mqttclient = mqtt.createClient(service.port, service.addresses[0]);
     // for the persistence subscription is needed:
     mqttclient.subscribe("/device/#");
     mqttclient.subscribe("/sensor/#");
@@ -141,14 +146,20 @@ function mdnsservice(service) {
             for (var obj in config) {
                 var cfg = config[obj];
                 if (cfg.enable == "1") {
-                    var insertStr = "INSERT INTO flmconfig" + " (sensor, name)" + ' VALUES ("' + cfg.id + '",' + ' "' + cfg.function + '")' + " ON DUPLICATE KEY UPDATE" + " sensor = VALUES(sensor)," + " name = VALUES(name);";
-                    database.query(insertStr, function(err, res) {
-                        if (err) {
-                            database.end();
-                            throw err;
-                        }
-                    });
-                    console.log("Detected sensor " + cfg.id + " (" + cfg.function + ")");
+                    if (sensors[cfg.id] == null) {
+                        sensors[cfg.id] = new Object({
+                            id: cfg.id,
+                            name: cfg.function
+                        });
+                        var insertStr = "INSERT INTO flmconfig" + " (sensor, name)" + ' VALUES ("' + cfg.id + '",' + ' "' + cfg.function + '")' + " ON DUPLICATE KEY UPDATE" + " sensor = VALUES(sensor)," + " name = VALUES(name);";
+                        database.query(insertStr, function(err, res) {
+                            if (err) {
+                                database.end();
+                                throw err;
+                            }
+                        });
+                        console.log("Detected sensor " + cfg.id + " (" + cfg.function + ")");
+                    }
                 }
             }
             break;
@@ -252,8 +263,10 @@ function handlequery(data) {
         if (err) throw err;
         var series = {};
         for (var i in rows) {
-            if (series[rows[i].sensor] == null) series[rows[i].sensor] = new Array();
-            series[rows[i].sensor].push([ rows[i].timestamp * 1e3, rows[i].value ]);
+            var sensorId = rows[i].sensor;
+            if (sensors[sensorId] != null) sensorId = sensors[sensorId].name;
+            if (series[sensorId] == null) series[sensorId] = new Array();
+            series[sensorId].push([ rows[i].timestamp * 1e3, rows[i].value ]);
         }
         // reduce the time series length through averages
         if (timeLen > 2 * 60 * 60) {
