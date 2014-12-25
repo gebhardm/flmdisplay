@@ -37,23 +37,7 @@ var dbaccess = {
 
 var database = mysql.createConnection(dbaccess);
 
-// connect to database
-database.connect(function(err) {
-    if (err) throw err;
-    console.log("Database flm successfully connected");
-});
-
-// define the persistence if it does not exist
-var createTabStr = "CREATE TABLE IF NOT EXISTS flmdata" + "( sensor CHAR(32)," + "  timestamp CHAR(10)," + "  value CHAR(5)," + "  unit CHAR(5)," + "  UNIQUE KEY (sensor, timestamp)," + "  INDEX idx_time (timestamp)" + ");";
-
-// and send the create command to the database
-database.query(createTabStr, function(err, res) {
-    if (err) {
-        database.end();
-        throw err;
-    }
-    console.log("Create/connect to table successful...");
-});
+prepare_database();
 
 // use mqtt for client, socket.io for push,
 var mqtt = require("mqtt");
@@ -74,16 +58,90 @@ ad.start();
 // detect mqtt publishers and create corresponding servers
 var mdnsbrowser = mdns.createBrowser(mdns.tcp("mqtt"));
 
+// mdnsbrowser.on
+mdnsbrowser.start();
+
 // handle detected devices
-mdnsbrowser.on("serviceUp", function(service) {
+mdnsbrowser.on("serviceUp", mdnsservice(service));
+
+// connect to database and check/create required tables
+function prepare_database() {
+    // connect to database
+    database.connect(function(err) {
+        if (err) throw err;
+        console.log("Database flm successfully connected");
+    });
+    // define the config persistence if it does not exist
+    var createTabStr = "CREATE TABLE IF NOT EXISTS flmconfig" + "( sensor CHAR(32)," + "  name CHAR(32)," + "  UNIQUE KEY sensor" + ");";
+    // and send the create command to the database
+    database.query(createTabStr, function(err, res) {
+        if (err) {
+            database.end();
+            throw err;
+        }
+        console.log("Create/connect to config table successful...");
+    });
+    // define the data persistence if it does not exist
+    createTabStr = "CREATE TABLE IF NOT EXISTS flmdata" + "( sensor CHAR(32)," + "  timestamp CHAR(10)," + "  value CHAR(5)," + "  unit CHAR(5)," + "  UNIQUE KEY (sensor, timestamp)," + "  INDEX idx_time (timestamp)" + ");";
+    // and send the create command to the database
+    database.query(createTabStr, function(err, res) {
+        if (err) {
+            database.end();
+            throw err;
+        }
+        console.log("Create/connect to data table successful...");
+    });
+}
+
+function mdnsservice(service) {
     console.log("detected:" + service.addresses[0] + ":" + service.port);
     var mqttclient = mqtt.createClient(service.port, service.addresses[0]);
     // for the persistence subscription is needed:
+    mqttclient.subscribe("/device/#");
     mqttclient.subscribe("/sensor/#");
     // handle mqtt messages
     mqttclient.on("message", function(topic, payload) {
-        var subtopics = topic.split("/");
-        switch (subtopics[3]) {
+        var topicArray = topic.split("/");
+        switch (topicArray[1]) {
+          case "device":
+            handle_device(topicArray, payload);
+            break;
+
+          case "sensor":
+            handle_sensor(topicArray, payload);
+            break;
+
+          default:
+            break;
+        }
+    });
+    // handle the device configuration
+    function handle_device(topicArray, payload) {
+        switch (topicArray[3]) {
+          case "config":
+            var config = JSON.parse(payload);
+            for (var obj in config) {
+                var cfg = config[obj];
+                if (cfg.enable == "1") {
+                    var insertStr = "INSERT INTO flmconfig" + " (sensor, name)" + ' VALUES ("' + cfg.id + '",' + ' "' + cfg.function + '")' + " ON DUPLICATE KEY UPDATE" + " sensor = VALUES(cfg.id)," + " name = VALUES(cfg.function);";
+                    database.query(insertStr, function(err, res) {
+                        if (err) {
+                            database.end();
+                            throw err;
+                        }
+                        console.log("Detected sensor " + cfg.id + " (" + cfg.function + ")");
+                    });
+                }
+            }
+            break;
+
+          default:
+            break;
+        }
+    }
+    // handle the sensor readings
+    function handle_sensor(topicArray, payload) {
+        switch (topicArray[3]) {
           case "gauge":
             var gauge = JSON.parse(payload);
             // FLM gauges consist of timestamp, value, and unit
@@ -116,7 +174,7 @@ mdnsbrowser.on("serviceUp", function(service) {
             topic: topic,
             payload: payload
         });
-    });
+    }
     // mqttclient.on
     // handle socketio requests
     io.on("connection", function(socket) {
@@ -129,10 +187,7 @@ mdnsbrowser.on("serviceUp", function(service) {
             mqttclient.subscribe(data.topic);
         });
     });
-});
-
-// mdnsbrowser.on
-mdnsbrowser.start();
+}
 
 // Serve the index.html page
 function httphandler(req, res) {
