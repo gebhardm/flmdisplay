@@ -21,6 +21,9 @@ var mdns = require("mdns");
 // multicast DNS service discovery
 var mdnsbrowser = mdns.createBrowser(mdns.tcp("mqtt"));
 
+// the database to use
+var database;
+
 // detect the MQTT broker using Bonjour
 mdnsbrowser.on("serviceUp", function(service) {
     console.log("detected:" + service.addresses[0] + ":" + service.port);
@@ -112,8 +115,8 @@ mdnsbrowser.on("serviceUp", function(service) {
 });
 
 function prepare_database() {
-    // define database and connect
-    var database = mysql.createConnection({
+    // connect to database
+    database = mysql.createConnection({
         host: "localhost",
         user: "pi",
         password: "raspberry",
