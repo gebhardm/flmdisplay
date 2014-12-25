@@ -140,7 +140,7 @@ function prepare_database() {
         console.log("Table 'flmconfig' created successfully...");
     });
     // create the data persistence if it does not exist
-    var createTabStr = "CREATE TABLE IF NOT EXISTS flmdata" + 
+    createTabStr = "CREATE TABLE IF NOT EXISTS flmdata" + 
                        "( sensor CHAR(32)," + 
                        "  timestamp CHAR(10)," + 
                        "  value CHAR(5)," + 
