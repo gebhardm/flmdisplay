@@ -21,23 +21,80 @@ var mdns = require("mdns");
 // multicast DNS service discovery
 var mdnsbrowser = mdns.createBrowser(mdns.tcp("mqtt"));
 
+// detect the MQTT broker using Bonjour
 mdnsbrowser.on("serviceUp", function(service) {
     console.log("detected:" + service.addresses[0] + ":" + service.port);
     // connect to discovered mqtt broker
     var mqttclient = mqtt.createClient(service.port, service.addresses[0]);
-    // subscribe to sensor topics
+    // subscribe to fluksometer topics
+    mqttclient.subscribe("/device/#");
     mqttclient.subscribe("/sensor/#");
     // act on received message
     mqttclient.on("message", function(topic, payload) {
-        var subtopics = topic.split("/");
-        switch (subtopics[3]) {
+        var topicArray = topic.split("/");
+        switch (topicArray[1]) {
+          case "device":
+            handle_device(topicArray, payload);
+            break;
+
+          case "sensor":
+            handle_sensor(topicArray, payload);
+            break;
+
+          default:
+            break;
+        }
+    });
+    // handle the device configuration
+    function handle_device(topicArray, payload) {
+        switch (topicArray[3]) {
+          case "config":
+            var config = JSON.parse(payload);
+            for (var obj in config) {
+                var cfg = config[obj];
+                if (cfg.enable == "1") {
+                var insertStr = "INSERT INTO flmconfig" + 
+                                " (sensor, name)" + 
+                                ' VALUES ("' + cfg.id + '",' + 
+                                ' "' + cfg.function + '")' + 
+                                " ON DUPLICATE KEY UPDATE" + 
+                                " sensor = VALUES(cfg.id)," + 
+                                " name = VALUES(cfg.function);";
+                database.query(insertStr, function(err, res) {
+                    if (err) {
+                        database.end();
+                        throw err;
+                    }
+                    console.log("Detected sensor " + cfg.id + " (" + cfg.function + ")");
+                });
+
+                }
+            }
+
+            break;
+
+          default:
+            break;
+        }
+    }
+    // handle the sensor readings 
+    function handle_sensor(topicArray, payload) {
+        switch (topicArray[3]) {
           case "gauge":
             var gauge = JSON.parse(payload);
             // FLM gauges consist of timestamp, value, and unit
             if (gauge.length == 3) {
-                // use the following conversion when using mySQL TIMESTAMP and replace gauge[0]
-                //var date = new Date(gauge[0]*1000).toISOString().slice(0, 19).replace('T', ' ');
-                var insertStr = "INSERT INTO flmdata" + " (sensor, timestamp, value, unit)" + ' VALUES ("' + subtopics[2] + '",' + ' "' + gauge[0] + '",' + ' "' + gauge[1] + '",' + ' "' + gauge[2] + '")' + " ON DUPLICATE KEY UPDATE" + " sensor = VALUES(sensor)," + " timestamp = VALUES(timestamp)," + " value = VALUES(value)," + " unit = VALUES(unit);";
+                var insertStr = "INSERT INTO flmdata" + 
+                                " (sensor, timestamp, value, unit)" + 
+                                ' VALUES ("' + subtopics[2] + '",' + 
+                                ' "' + gauge[0] + '",' + 
+                                ' "' + gauge[1] + '",' + 
+                                ' "' + gauge[2] + '")' + 
+                                " ON DUPLICATE KEY UPDATE" + 
+                                " sensor = VALUES(sensor)," + 
+                                " timestamp = VALUES(timestamp)," + 
+                                " value = VALUES(value)," + 
+                                " unit = VALUES(unit);";
                 database.query(insertStr, function(err, res) {
                     if (err) {
                         database.end();
@@ -51,33 +108,53 @@ mdnsbrowser.on("serviceUp", function(service) {
           case "counter":
             break;
         }
-    });
-});
-
-// mdnsbrowser.on
-// and start to discover
-mdnsbrowser.start();
-
-// define database and connect
-var database = mysql.createConnection({
-    host: "localhost",
-    user: "pi",
-    password: "raspberry",
-    database: "flm"
-});
-
-database.connect(function(err) {
-    if (err) throw err;
-    console.log("Database flm successfully connected");
-});
-
-// create the persistence if it does not exist
-var createTabStr = "CREATE TABLE IF NOT EXISTS flmdata" + "( sensor CHAR(32)," + "  timestamp CHAR(10)," + "  value CHAR(5)," + "  unit CHAR(5)," + "  UNIQUE KEY (sensor, timestamp)," + "  INDEX idx_time (timestamp)" + ");";
-
-database.query(createTabStr, function(err, res) {
-    if (err) {
-        database.end();
-        throw err;
     }
-    console.log("Create table successful...");
 });
+
+function prepare_database() {
+    // define database and connect
+    var database = mysql.createConnection({
+        host: "localhost",
+        user: "pi",
+        password: "raspberry",
+        database: "flm"
+    });
+    database.connect(function(err) {
+        if (err) throw err;
+        console.log("Database 'flm' successfully connected");
+    });
+    // create the config persistence if it does not exist
+    var createTabStr = "CREATE TABLE IF NOT EXISTS flmconfig" + 
+                       "( sensor CHAR(32)," +
+                       "  name CHAR(32)," +
+                       "  UNIQUE KEY sensor" + 
+                       ");";
+    database.query(createTabStr, function(err, res) {
+        if (err) {
+            database.end();
+            throw err;
+        }
+        console.log("Table 'flmconfig' created successfully...");
+    });
+    // create the data persistence if it does not exist
+    var createTabStr = "CREATE TABLE IF NOT EXISTS flmdata" + 
+                       "( sensor CHAR(32)," + 
+                       "  timestamp CHAR(10)," + 
+                       "  value CHAR(5)," + 
+                       "  unit CHAR(5)," + 
+                       "  UNIQUE KEY (sensor, timestamp)," + 
+                       "  INDEX idx_time (timestamp)" + ");";
+    database.query(createTabStr, function(err, res) {
+        if (err) {
+            database.end();
+            throw err;
+        }
+        console.log("Table 'flmdata' created successfully...");
+    });
+}
+
+// check and, if necessary, create the database table
+prepare_database();
+
+// mdnsbrowser.on and start to discover
+mdnsbrowser.start();
