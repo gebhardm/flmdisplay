@@ -62,7 +62,9 @@ var mdnsbrowser = mdns.createBrowser(mdns.tcp("mqtt"));
 mdnsbrowser.start();
 
 // handle detected devices
-mdnsbrowser.on("serviceUp", mdnsservice(service));
+mdnsbrowser.on("serviceUp", function(service) {
+    mdnsservice(service);
+});
 
 // connect to database and check/create required tables
 function prepare_database() {
@@ -72,7 +74,7 @@ function prepare_database() {
         console.log("Database flm successfully connected");
     });
     // define the config persistence if it does not exist
-    var createTabStr = "CREATE TABLE IF NOT EXISTS flmconfig" + "( sensor CHAR(32)," + "  name CHAR(32)," + "  UNIQUE KEY sensor" + ");";
+    var createTabStr = "CREATE TABLE IF NOT EXISTS flmconfig" + "( sensor CHAR(32)," + "  name CHAR(32)," + "  UNIQUE KEY (sensor)" + ");";
     // and send the create command to the database
     database.query(createTabStr, function(err, res) {
         if (err) {
@@ -99,6 +101,17 @@ function mdnsservice(service) {
     // for the persistence subscription is needed:
     mqttclient.subscribe("/device/#");
     mqttclient.subscribe("/sensor/#");
+    // handle socketio requests
+    io.on("connection", function(socket) {
+        // handle database query request
+        socket.on("query", function(data) {
+            handlequery(data);
+        });
+        // handle additional subscription request(s)
+        socket.on("subscribe", function(data) {
+            mqttclient.subscribe(data.topic);
+        });
+    });
     // handle mqtt messages
     mqttclient.on("message", function(topic, payload) {
         var topicArray = topic.split("/");
@@ -114,6 +127,11 @@ function mdnsservice(service) {
           default:
             break;
         }
+        // emit received message to socketio listener
+        io.sockets.emit("mqtt", {
+            topic: topic,
+            payload: payload
+        });
     });
     // handle the device configuration
     function handle_device(topicArray, payload) {
@@ -123,14 +141,14 @@ function mdnsservice(service) {
             for (var obj in config) {
                 var cfg = config[obj];
                 if (cfg.enable == "1") {
-                    var insertStr = "INSERT INTO flmconfig" + " (sensor, name)" + ' VALUES ("' + cfg.id + '",' + ' "' + cfg.function + '")' + " ON DUPLICATE KEY UPDATE" + " sensor = VALUES(cfg.id)," + " name = VALUES(cfg.function);";
+                    var insertStr = "INSERT INTO flmconfig" + " (sensor, name)" + ' VALUES ("' + cfg.id + '",' + ' "' + cfg.function + '")' + " ON DUPLICATE KEY UPDATE" + " sensor = VALUES(sensor)," + " name = VALUES(name);";
                     database.query(insertStr, function(err, res) {
                         if (err) {
                             database.end();
                             throw err;
                         }
-                        console.log("Detected sensor " + cfg.id + " (" + cfg.function + ")");
                     });
+                    console.log("Detected sensor " + cfg.id + " (" + cfg.function + ")");
                 }
             }
             break;
@@ -146,7 +164,7 @@ function mdnsservice(service) {
             var gauge = JSON.parse(payload);
             // FLM gauges consist of timestamp, value, and unit
             if (gauge.length == 3) {
-                var insertStr = "INSERT INTO flmdata" + " (sensor, timestamp, value, unit)" + ' VALUES ("' + subtopics[2] + '",' + ' "' + gauge[0] + '",' + ' "' + gauge[1] + '",' + ' "' + gauge[2] + '")' + " ON DUPLICATE KEY UPDATE" + " sensor = VALUES(sensor)," + " timestamp = VALUES(timestamp)," + " value = VALUES(value)," + " unit = VALUES(unit);";
+                var insertStr = "INSERT INTO flmdata" + " (sensor, timestamp, value, unit)" + ' VALUES ("' + topicArray[2] + '",' + ' "' + gauge[0] + '",' + ' "' + gauge[1] + '",' + ' "' + gauge[2] + '")' + " ON DUPLICATE KEY UPDATE" + " sensor = VALUES(sensor)," + " timestamp = VALUES(timestamp)," + " value = VALUES(value)," + " unit = VALUES(unit);";
                 database.query(insertStr, function(err, res) {
                     if (err) {
                         database.end();
@@ -168,25 +186,7 @@ function mdnsservice(service) {
           case "counter":
             break;
         }
-        // switch
-        // emit received message to socketio listener
-        io.sockets.emit("mqtt", {
-            topic: topic,
-            payload: payload
-        });
     }
-    // mqttclient.on
-    // handle socketio requests
-    io.on("connection", function(socket) {
-        // handle database query request
-        socket.on("query", function(data) {
-            handlequery(data);
-        });
-        // handle additional subscription request(s)
-        socket.on("subscribe", function(data) {
-            mqttclient.subscribe(data.topic);
-        });
-    });
 }
 
 // Serve the index.html page

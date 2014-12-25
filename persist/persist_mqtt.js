@@ -56,24 +56,16 @@ mdnsbrowser.on("serviceUp", function(service) {
             for (var obj in config) {
                 var cfg = config[obj];
                 if (cfg.enable == "1") {
-                var insertStr = "INSERT INTO flmconfig" + 
-                                " (sensor, name)" + 
-                                ' VALUES ("' + cfg.id + '",' + 
-                                ' "' + cfg.function + '")' + 
-                                " ON DUPLICATE KEY UPDATE" + 
-                                " sensor = VALUES(cfg.id)," + 
-                                " name = VALUES(cfg.function);";
-                database.query(insertStr, function(err, res) {
-                    if (err) {
-                        database.end();
-                        throw err;
-                    }
+                    var insertStr = "INSERT INTO flmconfig" + " (sensor, name)" + ' VALUES ("' + cfg.id + '",' + ' "' + cfg.function + '")' + " ON DUPLICATE KEY UPDATE" + " sensor = VALUES(sensor)," + " name = VALUES(name);";
+                    database.query(insertStr, function(err, res) {
+                        if (err) {
+                            database.end();
+                            throw err;
+                        }
+                    });
                     console.log("Detected sensor " + cfg.id + " (" + cfg.function + ")");
-                });
-
                 }
             }
-
             break;
 
           default:
@@ -87,17 +79,7 @@ mdnsbrowser.on("serviceUp", function(service) {
             var gauge = JSON.parse(payload);
             // FLM gauges consist of timestamp, value, and unit
             if (gauge.length == 3) {
-                var insertStr = "INSERT INTO flmdata" + 
-                                " (sensor, timestamp, value, unit)" + 
-                                ' VALUES ("' + subtopics[2] + '",' + 
-                                ' "' + gauge[0] + '",' + 
-                                ' "' + gauge[1] + '",' + 
-                                ' "' + gauge[2] + '")' + 
-                                " ON DUPLICATE KEY UPDATE" + 
-                                " sensor = VALUES(sensor)," + 
-                                " timestamp = VALUES(timestamp)," + 
-                                " value = VALUES(value)," + 
-                                " unit = VALUES(unit);";
+                var insertStr = "INSERT INTO flmdata" + " (sensor, timestamp, value, unit)" + ' VALUES ("' + topicArray[2] + '",' + ' "' + gauge[0] + '",' + ' "' + gauge[1] + '",' + ' "' + gauge[2] + '")' + " ON DUPLICATE KEY UPDATE" + " sensor = VALUES(sensor)," + " timestamp = VALUES(timestamp)," + " value = VALUES(value)," + " unit = VALUES(unit);";
                 database.query(insertStr, function(err, res) {
                     if (err) {
                         database.end();
@@ -127,11 +109,7 @@ function prepare_database() {
         console.log("Database 'flm' successfully connected");
     });
     // create the config persistence if it does not exist
-    var createTabStr = "CREATE TABLE IF NOT EXISTS flmconfig" + 
-                       "( sensor CHAR(32)," +
-                       "  name CHAR(32)," +
-                       "  UNIQUE KEY sensor" + 
-                       ");";
+    var createTabStr = "CREATE TABLE IF NOT EXISTS flmconfig" + "( sensor CHAR(32)," + "  name CHAR(32)," + "  UNIQUE KEY (sensor)" + ");";
     database.query(createTabStr, function(err, res) {
         if (err) {
             database.end();
@@ -140,13 +118,7 @@ function prepare_database() {
         console.log("Table 'flmconfig' created successfully...");
     });
     // create the data persistence if it does not exist
-    createTabStr = "CREATE TABLE IF NOT EXISTS flmdata" + 
-                       "( sensor CHAR(32)," + 
-                       "  timestamp CHAR(10)," + 
-                       "  value CHAR(5)," + 
-                       "  unit CHAR(5)," + 
-                       "  UNIQUE KEY (sensor, timestamp)," + 
-                       "  INDEX idx_time (timestamp)" + ");";
+    createTabStr = "CREATE TABLE IF NOT EXISTS flmdata" + "( sensor CHAR(32)," + "  timestamp CHAR(10)," + "  value CHAR(5)," + "  unit CHAR(5)," + "  UNIQUE KEY (sensor, timestamp)," + "  INDEX idx_time (timestamp)" + ");";
     database.query(createTabStr, function(err, res) {
         if (err) {
             database.end();
