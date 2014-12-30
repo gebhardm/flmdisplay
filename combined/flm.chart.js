@@ -165,14 +165,10 @@ $(document).ready(function() {
         emit();
     });
     // size the output area
-    var offset = 20;
-    //px
-    var width = $(document).width() - offset * 2;
+    var width = $("#chartpanel").width();
     var height = width * 3 / 4;
     height = height > 600 ? 600 : height;
-    $("#chart").width(width).height(height).offset({
-        left: offset
-    });
+    $("#chart").width(width).height(height);
     // allow tooltip on datapoints
     $("<div id='tooltip'></div>").css({
         position: "absolute",
