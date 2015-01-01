@@ -7,11 +7,7 @@ $(function() {
         padding: "2px",
         opacity: .9
     }).appendTo("body");
-    var width = $("#graphpanel").width();
-    var height = width * 3 / 4;
-    height = height > 600 ? 600 : height;
-    $("#graph").width(width).height(height);
-    // compute hover
+    // assign hover function
     $("#graph").on("plothover", function(event, pos, item) {
         if (item) {
             var itemTime = new Date(item.datapoint[0]);
@@ -174,6 +170,10 @@ socket.on("connect", function() {
             selSeries.push(s[0]);
         });
         // plot the selection
+        var width = $("#graphpanel").width();
+        var height = width * 3 / 4;
+        height = height > 600 ? 600 : height;
+        $("#graph").width(width).height(height);
         $.plot("#graph", selSeries, options);
         // and store the sensor configuration
         sensors[sensorId] = sensor;

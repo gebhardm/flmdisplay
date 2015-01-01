@@ -82,6 +82,11 @@ socket.on("connect", function() {
                 selChart.push(s[0]);
             });
             $("#info").html("");
+            // size the output area
+            var width = $("#chartpanel").width();
+            var height = width * 3 / 4;
+            height = height > 600 ? 600 : height;
+            $("#chart").width(width).height(height);
             $("#chart").plot(selChart, options);
         }
         // and finally plot the graph
@@ -118,7 +123,11 @@ socket.on("connect", function() {
                 });
                 details.push(selObj);
             }
-            //for
+            // size the output area
+            var width = $("#chartpanel").width();
+            var height = width * 3 / 4;
+            height = height > 600 ? 600 : height;
+            $("#chart").width(width).height(height);
             $("#chart").plot(details, options);
             $("#info").html('<div align="center"><button class="btn btn-primary btn-sm" id="reset">Reset</button></div>');
             // redraw the queried data
@@ -164,11 +173,6 @@ $(document).ready(function() {
         $("#choices").html("");
         emit();
     });
-    // size the output area
-    var width = $("#chartpanel").width();
-    var height = width * 3 / 4;
-    height = height > 600 ? 600 : height;
-    $("#chart").width(width).height(height);
     // allow tooltip on datapoints
     $("<div id='tooltip'></div>").css({
         position: "absolute",
