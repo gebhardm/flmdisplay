@@ -28,9 +28,12 @@ var database;
 mdnsbrowser.on("serviceUp", function(service) {
     console.log("detected:" + service.addresses[0] + ":" + service.port);
     // connect to discovered mqtt broker
-    var mqttclient = mqtt.createClient(service.port, service.addresses[0]);
+    var mqttclient = mqtt.connect({
+        port: service.port,
+        host: service.addresses[0]
+    });
     // subscribe to fluksometer topics
-    mqttclient.subscribe("/device/#");
+    mqttclient.subscribe("/device/+/config/sensor");
     mqttclient.subscribe("/sensor/#");
     // act on received message
     mqttclient.on("message", function(topic, payload) {

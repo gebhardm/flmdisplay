@@ -102,9 +102,12 @@ function prepare_database() {
 
 function mdnsservice(service) {
     console.log("Detected MQTT service on: " + service.addresses[0] + ":" + service.port);
-    mqttclient = mqtt.createClient(service.port, service.addresses[0]);
+    mqttclient = mqtt.connect({
+        port: service.port,
+        host: service.addresses[0]
+    });
     // for the persistence subscription is needed:
-    mqttclient.subscribe("/device/#");
+    mqttclient.subscribe("/device/+/config/sensor");
     mqttclient.subscribe("/sensor/#");
     // handle socketio requests
     io.on("connection", function(socket) {
@@ -135,7 +138,7 @@ function mdnsservice(service) {
         // emit received message to socketio listener
         io.sockets.emit("mqtt", {
             topic: topic,
-            payload: payload
+            payload: payload.toString()
         });
     });
     // handle the device configuration
