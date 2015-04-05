@@ -1,10 +1,10 @@
 **persist_mqtt.js** is a .js script running on node.js to persist Fluksometer
-readings in a MySQL database - so it needs node.js installed...<br/>
+readings in a MySQL database - so it needs [node.js](http://nodejs.org) installed...<br/>
 It connects to the FLM's MQTT broker on the discovered IP address(es)
 using the multicast DNS service discovery - so there is no further
 configuration to change.
 
-Make sure the mdns, mqtt and mysql node_modules are installed; if they are not
+Make sure the **mdns, mqtt** and **mysql** node_modules are installed; if they are not
 installed, install them using 
 
     npm install mdns mqtt mysql

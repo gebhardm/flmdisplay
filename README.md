@@ -6,7 +6,7 @@ Visualization hacks for the Fluksometer
 
 This repository contains the collected scripts implemented to persist and visualize readings from the [www.flukso.net](http://www.flukso.net) provided Fluksometer, an open source, community smart metering appliance.
 
-It actually is a fork of 
+It actually is a fork of the 
 [energyhacks](http://github.com/gebhardm/energyhacks/tree/master/RaspberryPi)
 variant to keep up with evolving reuse components, for example [socket.io](http://socket.io).
 
@@ -22,12 +22,15 @@ See the respective [release menu in github](https://github.com/gebhardm/flmdispl
 convenience.
 
 ##Default
-For a default use, go to the *combined* folder that also contains information on how to prepare a computer or Raspberry Pi for usage.
+For a default use, go to the [*combined*](combined) folder that also contains information on how to prepare a computer, laptop or Raspberry Pi for usage.
 
 <img src="FLM_readings.png" width=500px>
 
+##A "better" solution
+With the upcoming v2.4.x firmware release of the Fluksometer there are some very interesting features that lead to installing persistence and visualization directly on the FLM. For this purpose development on this repository will rather not be evolving, but its successor [flmlocal](http://github.com/gebhardm/flmlocal) that provides all you need to make a full-fledged visualization without the need for an extra web server
+.
 ##Licenses
 
 All code provided under the respective licences; if not denoted otherwise the [MIT license](http://opensource.org/licenses/MIT) is the one to care about...
 
-(c) 2014, Markus Gebhard, Karlsruhe
+(c) 2014/2015, Markus Gebhard, Karlsruhe
