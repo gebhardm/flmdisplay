@@ -111,11 +111,11 @@ function mdnsservice(service) {
         // for the persistence subscription is needed:        
         mqttclient.subscribe("/device/+/config/sensor");
         mqttclient.subscribe("/sensor/#");
-	});
-	mqttclient.on("error", function(){
-	    // error handling to be a bit more sophisticated...
-	    console.log("An MQTT error occurred...");
-	});
+    });
+    mqttclient.on("error", function() {
+        // error handling to be a bit more sophisticated...
+        console.log("An MQTT error occurred...");
+    });
     // handle socketio requests
     io.on("connection", function(socket) {
         // handle database query request
