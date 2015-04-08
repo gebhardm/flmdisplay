@@ -107,10 +107,11 @@ function mdnsservice(service) {
         host: service.addresses[0]
     });
     mqttclient.on("connect", function() {
-        console.log("Connected...");
+        console.log("Connected to " + service.addresses[0] + ":" + service.port);
         // for the persistence subscription is needed:        
         mqttclient.subscribe("/device/+/config/sensor");
-        mqttclient.subscribe("/sensor/#");
+        mqttclient.subscribe("/sensor/+/gauge");
+        mqttclient.subscribe("/sensor/+/counter");
     });
     mqttclient.on("error", function() {
         // error handling to be a bit more sophisticated...
@@ -183,8 +184,9 @@ function mdnsservice(service) {
         switch (topicArray[3]) {
           case "gauge":
             var gauge = JSON.parse(payload);
-            // FLM gauges consist of timestamp, value, and unit
-            if (gauge.length == 3) {
+            switch (gauge.length) {
+              case 3:
+                // FLM gauges consist of timestamp, value, and unit
                 var insertStr = "INSERT INTO flmdata" + " (sensor, timestamp, value, unit)" + ' VALUES ("' + topicArray[2] + '",' + ' "' + gauge[0] + '",' + ' "' + gauge[1] + '",' + ' "' + gauge[2] + '")' + " ON DUPLICATE KEY UPDATE" + " sensor = VALUES(sensor)," + " timestamp = VALUES(timestamp)," + " value = VALUES(value)," + " unit = VALUES(unit);";
                 database.query(insertStr, function(err, res) {
                     if (err) {
@@ -192,15 +194,10 @@ function mdnsservice(service) {
                         throw err;
                     }
                 });
-            }
-            // FLM gauge length is 3 - you may define further gauge lengths to be persisted
-            // gauge length 2 is sent from Arduino sensors (in my case)
-            if (gauge.length == 2) {
-                // enhance payload w/o timestamp by current timestamp
-                var now = parseInt(new Date().getTime() / 1e3);
-                var new_payload = [];
-                new_payload.push(now, gauge[0], gauge[1]);
-                payload = JSON.stringify(new_payload);
+                break;
+
+              default:
+                break;
             }
             break;
 

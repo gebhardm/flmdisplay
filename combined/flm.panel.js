@@ -93,19 +93,7 @@ socket.on("connect", function() {
             if (sensor.series == null) {
                 sensor.series = new Array();
                 numGauges++;
-                var tablerow = '<tr>' + 
-                               '<td width="30%" style="vertical-align:middle;">' +
-                               '<h4 id="sensor' + sensor.id + '"></h4>' +
-                               '<small id="time' + sensor.id + '"><small>' +
-                               '</td>' +
-                               '<td style="vertical-align:middle;">'+
-                               '<span id="valueSparkline' + sensor.id + '"></span>'+
-                               '</td>'+
-                               '<td width="30%" style="vertical-align:middle;">'+
-                               '<h4 id="value' + sensor.id + '"></h4>'+
-                               '<small id="counter' + sensor.id +'"></small>'+
-                               '</td>'+
-                               '</tr>';
+                var tablerow = "<tr>" + '<td width="30%" style="vertical-align:middle;">' + '<h4 id="sensor' + sensor.id + '"></h4>' + '<small id="time' + sensor.id + '"><small>' + "</td>" + '<td style="vertical-align:middle;">' + '<span id="valueSparkline' + sensor.id + '"></span>' + "</td>" + '<td width="30%" style="vertical-align:middle;">' + '<h4 id="value' + sensor.id + '"></h4>' + '<small id="counter' + sensor.id + '"></small>' + "</td>" + "</tr>";
                 $("#gauge").append(tablerow);
             }
             if (sensor.series.length == 60) sensor.series.shift();
@@ -121,21 +109,21 @@ socket.on("connect", function() {
           default:
             break;
         }
-            // now pass the data to the html part
-            $("#sensor" + sensor.id).html(sensor.name);
-            $("#time" + sensor.id).html(sensor.gaugetimestamp);
-            $("#value" + sensor.id).html(sensor.gaugevalue + ' ' + sensor.gaugeunit);
-            $("#valueSparkline" + sensor.id).sparkline(sensor.series, {
-                type: "line",
-                width: "200",
-                height: "50",
-                tooltipFormat: '<span class="text-info bg-info">{{x}}:{{y}}</span>'
-            });
-        $("#counter" + sensor.id).html('Total ' + sensor.countervalue + ' ' + sensor.counterunit);
+        // now pass the data to the html part
+        $("#sensor" + sensor.id).html(sensor.name);
+        $("#time" + sensor.id).html(sensor.gaugetimestamp);
+        $("#value" + sensor.id).html(sensor.gaugevalue + " " + sensor.gaugeunit);
+        $("#valueSparkline" + sensor.id).sparkline(sensor.series, {
+            type: "line",
+            width: "200",
+            height: "50",
+            tooltipFormat: '<span class="text-info bg-info">{{x}}:{{y}}</span>'
+        });
+        if (sensor.countervalue !== undefined) $("#counter" + sensor.id).html("Total " + sensor.countervalue + " " + sensor.counterunit);
         sensors[sensorId] = sensor;
     }
     socket.emit("subscribe", {
-        topic: "/device/#"
+        topic: "/device/+/config/sensor"
     });
     socket.emit("subscribe", {
         topic: "/sensor/#"
