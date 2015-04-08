@@ -106,9 +106,16 @@ function mdnsservice(service) {
         port: service.port,
         host: service.addresses[0]
     });
-    // for the persistence subscription is needed:
-    mqttclient.subscribe("/device/+/config/sensor");
-    mqttclient.subscribe("/sensor/#");
+    mqttclient.on("connect", function() {
+        console.log("Connected...");
+        // for the persistence subscription is needed:        
+        mqttclient.subscribe("/device/+/config/sensor");
+        mqttclient.subscribe("/sensor/#");
+	});
+	mqttclient.on("error", function(){
+	    // error handling to be a bit more sophisticated...
+	    console.log("An MQTT error occurred...");
+	});
     // handle socketio requests
     io.on("connection", function(socket) {
         // handle database query request
@@ -186,7 +193,8 @@ function mdnsservice(service) {
                     }
                 });
             }
-            // gauge length 3 - you may define further gauge lengths to be persisted
+            // FLM gauge length is 3 - you may define further gauge lengths to be persisted
+            // gauge length 2 is sent from Arduino sensors (in my case)
             if (gauge.length == 2) {
                 // enhance payload w/o timestamp by current timestamp
                 var now = parseInt(new Date().getTime() / 1e3);
@@ -194,10 +202,9 @@ function mdnsservice(service) {
                 new_payload.push(now, gauge[0], gauge[1]);
                 payload = JSON.stringify(new_payload);
             }
-            // gauge length 2 is sent from Arduino sensors (in my case)
             break;
 
-          case "counter":
+          default:
             break;
         }
     }
