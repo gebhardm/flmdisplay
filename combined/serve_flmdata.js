@@ -131,10 +131,13 @@ function mdnsservice(service) {
     // handle mqtt messages
     mqttclient.on("message", function(topic, message) {
         var topicArray = topic.split("/");
-        // don't handle sensors if a compressed query is published
-        if (topicArray[3] == "query") return;
         var payload = message.toString();
-        payload = JSON.parse(payload);
+        // don't handle messages with weird tokens, e.g. compression
+        try {
+            payload = JSON.parse(payload);
+        } catch (error) {
+            return;
+        }
         switch (topicArray[1]) {
           case "device":
             handle_device(topicArray, payload);
