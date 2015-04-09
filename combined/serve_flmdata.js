@@ -131,6 +131,8 @@ function mdnsservice(service) {
     // handle mqtt messages
     mqttclient.on("message", function(topic, message) {
         var topicArray = topic.split("/");
+        // don't handle sensors if a compressed query is published
+        if (topicArray[3] == "query") return;
         var payload = message.toString();
         payload = JSON.parse(payload);
         switch (topicArray[1]) {
