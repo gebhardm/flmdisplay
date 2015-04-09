@@ -129,8 +129,10 @@ function mdnsservice(service) {
         });
     });
     // handle mqtt messages
-    mqttclient.on("message", function(topic, payload) {
+    mqttclient.on("message", function(topic, message) {
         var topicArray = topic.split("/");
+        var payload = message.toString();
+        payload = JSON.parse(payload);
         switch (topicArray[1]) {
           case "device":
             handle_device(topicArray, payload);
@@ -146,16 +148,15 @@ function mdnsservice(service) {
         // emit received message to socketio listener
         io.sockets.emit("mqtt", {
             topic: topic,
-            payload: payload.toString()
+            payload: JSON.stringify(payload)
         });
     });
     // handle the device configuration
     function handle_device(topicArray, payload) {
         switch (topicArray[3]) {
           case "config":
-            var config = JSON.parse(payload);
-            for (var obj in config) {
-                var cfg = config[obj];
+            for (var obj in payload) {
+                var cfg = payload[obj];
                 if (cfg.enable == "1") {
                     if (sensors[cfg.id] == null) {
                         sensors[cfg.id] = new Object({
@@ -183,11 +184,15 @@ function mdnsservice(service) {
     function handle_sensor(topicArray, payload) {
         switch (topicArray[3]) {
           case "gauge":
-            var gauge = JSON.parse(payload);
-            switch (gauge.length) {
+            switch (payload.length) {
+              case 2:
+                var now = parseInt(new Date().getTime() / 1e3);
+                payload.unshift(now);
+                break;
+
               case 3:
                 // FLM gauges consist of timestamp, value, and unit
-                var insertStr = "INSERT INTO flmdata" + " (sensor, timestamp, value, unit)" + ' VALUES ("' + topicArray[2] + '",' + ' "' + gauge[0] + '",' + ' "' + gauge[1] + '",' + ' "' + gauge[2] + '")' + " ON DUPLICATE KEY UPDATE" + " sensor = VALUES(sensor)," + " timestamp = VALUES(timestamp)," + " value = VALUES(value)," + " unit = VALUES(unit);";
+                var insertStr = "INSERT INTO flmdata" + " (sensor, timestamp, value, unit)" + ' VALUES ("' + topicArray[2] + '",' + ' "' + payload[0] + '",' + ' "' + payload[1] + '",' + ' "' + payload[2] + '")' + " ON DUPLICATE KEY UPDATE" + " sensor = VALUES(sensor)," + " timestamp = VALUES(timestamp)," + " value = VALUES(value)," + " unit = VALUES(unit);";
                 database.query(insertStr, function(err, res) {
                     if (err) {
                         database.end();
