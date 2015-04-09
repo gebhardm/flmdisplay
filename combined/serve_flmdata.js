@@ -185,11 +185,6 @@ function mdnsservice(service) {
           case "gauge":
             var gauge = JSON.parse(payload);
             switch (gauge.length) {
-                case 2:
-                    // add the current timestamp to a value/unit pair
-                    var now = parseInt(new Date().getTime() / 1e3);
-                    payload.unshift(now);
-                    break;
               case 3:
                 // FLM gauges consist of timestamp, value, and unit
                 var insertStr = "INSERT INTO flmdata" + " (sensor, timestamp, value, unit)" + ' VALUES ("' + topicArray[2] + '",' + ' "' + gauge[0] + '",' + ' "' + gauge[1] + '",' + ' "' + gauge[2] + '")' + " ON DUPLICATE KEY UPDATE" + " sensor = VALUES(sensor)," + " timestamp = VALUES(timestamp)," + " value = VALUES(value)," + " unit = VALUES(unit);";
