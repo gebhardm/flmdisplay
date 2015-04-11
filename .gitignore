@@ -8,3 +8,8 @@ default/
 *.aws
 *.aps
 *.pptx
+# ignore node modules
+node_modules/*
+persist/node_modules/*
+combined/node_modules/*
+

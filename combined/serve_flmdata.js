@@ -1,7 +1,7 @@
 /*
  * This is the combined script to serve a panel, chart and persistence service
  * for Fluksometer data processing.
- * Markus Gebhard, Karlsruhe, 06/2014
+ * (c) Markus Gebhard, Karlsruhe, 2014/2015
  *
  * In parts copyright (c) 2013, Fabian Affolter <fabian@affolter-engineering.ch>
  * Released under the MIT license. See LICENSE file for details.
@@ -10,8 +10,8 @@
  * be aware of Apple compatibility layer
  * Static http server part taken from Ryan Florence (rpflorence on github)
  * https://gist.github.com/rpflorence/701407
- * ************************************************************
- * Note: Use socket.io v1.0 for this script...
+ *
+ * Note: use 'npm install' with package.json to get all dependencies
  */
 // use http for page serving, fs for getting the *.html files
 var httpport = 1080;
@@ -52,7 +52,7 @@ var mdns = require("mdns");
 
 // advertise the http server on the httpport
 var ad = new mdns.Advertisement(mdns.tcp("http"), httpport, {
-    name: "FLM data processor"
+    name: "FLM visualization and persistence"
 });
 
 ad.start();

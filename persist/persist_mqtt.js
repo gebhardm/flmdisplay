@@ -2,13 +2,10 @@
 This .js file subscribes to FLM sensor topics
 and stores the received sensor gauges into a
 mysql database.
-(c) Markus Gebhard, Karlsruhe, 2014 - under MIT license
+(c) Markus Gebhard, Karlsruhe, 2014/2015 - under MIT license
 delivered "as is", no guarantee to work ;-)
 
-uses
-  mysql module: https://github.com/felixge/node-mysql
-  mqtt module: https://github.com/adamvr/MQTT.js/
-  mdns module: https://github.com/agnat/node_mdns
+uses dependencies defined in package.json
 ************************************************************/
 var mysql = require("mysql");
 
@@ -33,11 +30,23 @@ mdnsbrowser.on("serviceUp", function(service) {
         host: service.addresses[0]
     });
     // subscribe to fluksometer topics
-    mqttclient.subscribe("/device/+/config/sensor");
-    mqttclient.subscribe("/sensor/#");
+    mqttclient.on("connect", function() {
+        mqttclient.subscribe("/device/+/config/sensor");
+        mqttclient.subscribe("/sensor/#");
+    });
+    mqttclient.on("error", function() {
+        console.log("MQTT client raised an error...");
+    });
     // act on received message
-    mqttclient.on("message", function(topic, payload) {
+    mqttclient.on("message", function(topic, message) {
         var topicArray = topic.split("/");
+        var payload = message.toString();
+        // don't handle messages with weird tokens, e.g. compression
+        try {
+            payload = JSON.parse(payload);
+        } catch (error) {
+            return;
+        }
         switch (topicArray[1]) {
           case "device":
             handle_device(topicArray, payload);
@@ -55,9 +64,8 @@ mdnsbrowser.on("serviceUp", function(service) {
     function handle_device(topicArray, payload) {
         switch (topicArray[3]) {
           case "config":
-            var config = JSON.parse(payload);
-            for (var obj in config) {
-                var cfg = config[obj];
+            for (var obj in payload) {
+                var cfg = payload[obj];
                 if (cfg.enable == "1") {
                     var insertStr = "INSERT INTO flmconfig" + " (sensor, name)" + ' VALUES ("' + cfg.id + '",' + ' "' + cfg.function + '")' + " ON DUPLICATE KEY UPDATE" + " sensor = VALUES(sensor)," + " name = VALUES(name);";
                     database.query(insertStr, function(err, res) {
@@ -79,10 +87,10 @@ mdnsbrowser.on("serviceUp", function(service) {
     function handle_sensor(topicArray, payload) {
         switch (topicArray[3]) {
           case "gauge":
-            var gauge = JSON.parse(payload);
             // FLM gauges consist of timestamp, value, and unit
-            if (gauge.length == 3) {
-                var insertStr = "INSERT INTO flmdata" + " (sensor, timestamp, value, unit)" + ' VALUES ("' + topicArray[2] + '",' + ' "' + gauge[0] + '",' + ' "' + gauge[1] + '",' + ' "' + gauge[2] + '")' + " ON DUPLICATE KEY UPDATE" + " sensor = VALUES(sensor)," + " timestamp = VALUES(timestamp)," + " value = VALUES(value)," + " unit = VALUES(unit);";
+            // you may define further gauge lengths to be persisted
+            if (payload.length == 3) {
+                var insertStr = "INSERT INTO flmdata" + " (sensor, timestamp, value, unit)" + ' VALUES ("' + topicArray[2] + '",' + ' "' + payload[0] + '",' + ' "' + payload[1] + '",' + ' "' + payload[2] + '")' + " ON DUPLICATE KEY UPDATE" + " sensor = VALUES(sensor)," + " timestamp = VALUES(timestamp)," + " value = VALUES(value)," + " unit = VALUES(unit);";
                 database.query(insertStr, function(err, res) {
                     if (err) {
                         database.end();
@@ -90,7 +98,6 @@ mdnsbrowser.on("serviceUp", function(service) {
                     }
                 });
             }
-            // gauge length 3 - you may define further gauge lengths to be persisted
             break;
 
           case "counter":
