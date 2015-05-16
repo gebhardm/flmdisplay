@@ -119,7 +119,7 @@ socket.on("connect", function() {
                 if (diff > 100) break;
                 // check if current sensor was already registered
                 var obj = series.filter(function(o) {
-                    return o.label == sensor.name;
+                    return o.label == (sensor.name || sensor.id);
                 });
                 // flot.time requires UTC-like timestamps;
                 // see https://github.com/flot/flot/blob/master/API.md#time-series-data
@@ -135,6 +135,7 @@ socket.on("connect", function() {
                     // add graph select option
                     $("#choices").append("<div class='checkbox'>" + "<small><label>" + "<input type='checkbox' id='" + sensor.name + "' checked='checked'></input>" + sensor.name + "</label></small>" + "</div>");
                 } else {
+                    if (obj[0].label == sensor.id) obj[0].label = sensor.name;
                     obj[0].data.push([ timestamp, value[1] ]);
                     // move out values older than 5 minutes
                     var limit = parseInt(obj[0].data[0]);
