@@ -119,8 +119,13 @@ socket.on("connect", function() {
                 if (diff > 100) break;
                 // check if current sensor was already registered
                 var obj = series.filter(function(o) {
-                    return o.label == (sensor.name || sensor.id);
+                    return o.label == sensor.name;
                 });
+                if (obj[0] == null) {
+                    obj = series.filter(function(o) {
+                        return o.label == sensor.id;
+                    });
+                }
                 // flot.time requires UTC-like timestamps;
                 // see https://github.com/flot/flot/blob/master/API.md#time-series-data
                 var timestamp = value[0] * 1e3;
