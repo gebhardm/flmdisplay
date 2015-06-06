@@ -107,7 +107,8 @@ function mdnsservice(service) {
         host: service.addresses[0]
     });
     mqttclient.on("connect", function() {
-        console.log("Connected to " + service.addresses[0] + ":" + service.port);
+        var now = new Date();
+        console.log(now + " : Connected to " + service.addresses[0] + ":" + service.port);
         // for the persistence subscription is needed:        
         mqttclient.subscribe("/device/+/config/sensor");
         mqttclient.subscribe("/sensor/+/gauge");
