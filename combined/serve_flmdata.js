@@ -68,6 +68,11 @@ mdnsbrowser.on("serviceUp", function(service) {
     mdnsservice(service);
 });
 
+// handle if mdns server goes offline
+mdnsbrowser.on("serviceDown", function(service) {
+    console.log("MDNS service went down: ", service);
+});
+
 // store detected sensors
 var sensors = {};
 
