@@ -268,6 +268,8 @@ function handlequery(data) {
     // get time interval to query
     var fromTimestamp = data.fromTimestamp;
     var toTimestamp = data.toTimestamp;
+    // log the query request
+    console.log("Handling query from "+fromTimestamp+" to "+toTimestamp);
     // check delivered interval
     if (toTimestamp < fromTimestamp) {
         var temp = fromTimestamp;
@@ -313,5 +315,6 @@ function handlequery(data) {
         }
         // send data to requester
         io.sockets.emit("series", series);
+        console.log("Queried series transmitted...");
     });
 }
