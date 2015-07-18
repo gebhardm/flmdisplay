@@ -127,6 +127,7 @@ function mdnsservice(service) {
     io.on("connection", function(socket) {
         // handle database query request
         socket.on("query", function(data) {
+            console.log("Socket received query request...");
             handlequery(data);
         });
         // handle additional subscription request(s)
@@ -269,7 +270,7 @@ function handlequery(data) {
     var fromTimestamp = data.fromTimestamp;
     var toTimestamp = data.toTimestamp;
     // log the query request
-    console.log("Handling query from "+fromTimestamp+" to "+toTimestamp);
+    console.log("Handling query from " + fromTimestamp + " to " + toTimestamp);
     // check delivered interval
     if (toTimestamp < fromTimestamp) {
         var temp = fromTimestamp;

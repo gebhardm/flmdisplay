@@ -92,49 +92,6 @@ socket.on("connect", function() {
         // and finally plot the graph
         $("#info").html("");
         plotSelChart();
-        // process hover
-        $("#chart").on("plothover", function(event, pos, item) {
-            if (item) {
-                var itemTime = new Date(item.datapoint[0]);
-                var hrs = itemTime.getHours();
-                hrs = hrs < 10 ? "0" + hrs : hrs;
-                var min = itemTime.getMinutes();
-                min = min < 10 ? "0" + min : min;
-                var sec = itemTime.getSeconds();
-                sec = sec < 10 ? "0" + sec : sec;
-                $("#tooltip").html(hrs + ":" + min + ":" + sec + " : " + item.datapoint[1]).css({
-                    top: item.pageY + 7,
-                    left: item.pageX + 5
-                }).fadeIn(200);
-            } else $("#tooltip").hide();
-        });
-        // process selection time interval
-        $("#chart").on("plotselected", function(event, range) {
-            var selFrom = range.xaxis.from.toFixed(0);
-            var selTo = range.xaxis.to.toFixed(0);
-            var details = new Array();
-            // filter values within the selected time interval
-            for (var i in selChart) {
-                var selObj = {};
-                selObj.color = selChart[i].color;
-                selObj.label = selChart[i].label;
-                selObj.data = selChart[i].data.filter(function(v) {
-                    return v[0] >= selFrom && v[0] <= selTo;
-                });
-                details.push(selObj);
-            }
-            // size the output area
-            var width = $("#chartpanel").width();
-            var height = width * 3 / 4;
-            height = height > 600 ? 600 : height;
-            $("#chart").width(width).height(height);
-            $("#chart").plot(details, options);
-            $("#info").html('<div align="center"><button class="btn btn-primary btn-sm" id="reset">Reset</button></div>');
-            // redraw the queried data
-            $("#reset").on("click", function() {
-                $("#chart").plot(selChart, options);
-            });
-        });
     });
 });
 
@@ -181,17 +138,59 @@ $(document).ready(function() {
         padding: "2px",
         opacity: .9
     }).appendTo("body");
+    // process hover
+    $("#chart").on("plothover", function(event, pos, item) {
+        if (item) {
+            var itemTime = new Date(item.datapoint[0]);
+            var hrs = itemTime.getHours();
+            hrs = hrs < 10 ? "0" + hrs : hrs;
+            var min = itemTime.getMinutes();
+            min = min < 10 ? "0" + min : min;
+            var sec = itemTime.getSeconds();
+            sec = sec < 10 ? "0" + sec : sec;
+            $("#tooltip").html(hrs + ":" + min + ":" + sec + " : " + item.datapoint[1]).css({
+                top: item.pageY + 7,
+                left: item.pageX + 5
+            }).fadeIn(200);
+        } else $("#tooltip").hide();
+    });
+    // process selection time interval
+    $("#chart").on("plotselected", function(event, range) {
+        var selFrom = range.xaxis.from.toFixed(0);
+        var selTo = range.xaxis.to.toFixed(0);
+        var details = new Array();
+        // filter values within the selected time interval
+        for (var i in selChart) {
+            var selObj = {};
+            selObj.color = selChart[i].color;
+            selObj.label = selChart[i].label;
+            selObj.data = selChart[i].data.filter(function(v) {
+                return v[0] >= selFrom && v[0] <= selTo;
+            });
+            details.push(selObj);
+        }
+        // size the output area
+        var width = $("#chartpanel").width();
+        var height = width * 3 / 4;
+        height = height > 600 ? 600 : height;
+        $("#chart").width(width).height(height);
+        $("#chart").plot(details, options);
+        $("#info").html('<div align="center"><button class="btn btn-primary btn-sm" id="reset">Reset</button></div>');
+        // redraw the queried data
+        $("#reset").on("click", function() {
+            $("#chart").plot(selChart, options);
+        });
+    });
+    // emit the query request to the server part
+    function emit() {
+        var data = {};
+        var from = Date.parse(fromDate + "T" + fromTime + "Z") / 1e3;
+        var to = Date.parse(toDate + "T" + toTime + "Z") / 1e3;
+        var offset = new Date().getTimezoneOffset() * 60;
+        data.fromTimestamp = from + offset;
+        data.toTimestamp = to + offset;
+        $("#chart").html("");
+        $("#info").html("");
+        socket.emit("query", data);
+    }
 });
-
-// emit the query request to the server part
-function emit() {
-    var data = {};
-    var from = Date.parse(fromDate + "T" + fromTime + "Z") / 1e3;
-    var to = Date.parse(toDate + "T" + toTime + "Z") / 1e3;
-    var offset = new Date().getTimezoneOffset() * 60;
-    data.fromTimestamp = from + offset;
-    data.toTimestamp = to + offset;
-    $("#chart").html("");
-    $("#info").html("");
-    socket.emit("query", data);
-}
