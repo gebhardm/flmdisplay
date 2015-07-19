@@ -24,6 +24,9 @@ var url = require("url");
 
 var path = require("path");
 
+// store detected sensors
+var sensors = {};
+
 // database access
 var mysql = require("mysql");
 
@@ -44,18 +47,81 @@ var mqtt = require("mqtt");
 
 var mqttclient;
 
-var io = require("socket.io")(http);
-
-// the socket listens on the http port
 // multicast DNS service discovery
 var mdns = require("mdns");
 
-// advertise the http server on the httpport
-var ad = new mdns.Advertisement(mdns.tcp("http"), httpport, {
-    name: "FLM visualization and persistence"
-});
+// the socket listens on the http port
+var io = require("socket.io")(http);
 
-ad.start();
+// handle socketio requests
+io.on("connection", function(socket) {
+    // handle database query request
+    socket.on("query", function(data) {
+        console.log("Socket received query request...");
+        handlequery(data);
+    });
+    // handle additional subscription request(s)
+    socket.on("subscribe", function(data) {
+        mqttclient.subscribe(data.topic);
+    });
+    // define what shall be done on a io request
+    function handlequery(data) {
+        // send message that data load it started...
+        io.sockets.emit("info", "<center>Loading...</center>");
+        // get time interval to query
+        var fromTimestamp = data.fromTimestamp;
+        var toTimestamp = data.toTimestamp;
+        // log the query request
+        console.log("Handling query from " + fromTimestamp + " to " + toTimestamp);
+        // check delivered interval
+        if (toTimestamp < fromTimestamp) {
+            var temp = fromTimestamp;
+            fromTimestamp = toTimestamp;
+            toTimestamp = temp;
+        }
+        var timeLen = toTimestamp - fromTimestamp;
+        // check if interval is small enough to query
+        if (timeLen > 12 * 60 * 60) {
+            io.sockets.emit("info", "<center><strong>Time interval too large to query...</strong></center>");
+            return;
+        }
+        // fetch flm data from database
+        var queryStr = "SELECT * FROM flmdata WHERE timestamp >= '" + fromTimestamp + "' AND timestamp <= '" + toTimestamp + "';";
+        var query = database.query(queryStr, function(err, rows, fields) {
+            if (err) throw err;
+            var series = {};
+            for (var i in rows) {
+                var sensorId = rows[i].sensor;
+                if (sensors[sensorId] != null) sensorId = sensors[sensorId].name;
+                if (series[sensorId] == null) series[sensorId] = new Array();
+                series[sensorId].push([ rows[i].timestamp * 1e3, rows[i].value ]);
+            }
+            // reduce the time series length through averages
+            if (timeLen > 2 * 60 * 60) {
+                for (var s in series) {
+                    var n = 0, avg = 0;
+                    var ser = new Array();
+                    for (var v in series[s]) {
+                        // series[s][v] delivers the single series [timestamp,value]
+                        n++;
+                        avg += parseInt(series[s][v][1]);
+                        tim = new Date(series[s][v][0]);
+                        if (tim.getSeconds() == 0) {
+                            avg = Math.round(avg / n);
+                            ser.push([ series[s][v][0], avg ]);
+                            avg = 0;
+                            n = 0;
+                        }
+                    }
+                    series[s] = ser;
+                }
+            }
+            // send data to requester
+            io.sockets.emit("series", series);
+            console.log("Queried series transmitted...");
+        });
+    }
+});
 
 // detect mqtt publishers and create corresponding servers
 var mdnsbrowser = mdns.createBrowser(mdns.tcp("mqtt"));
@@ -65,47 +131,6 @@ mdnsbrowser.start();
 
 // handle detected devices
 mdnsbrowser.on("serviceUp", function(service) {
-    mdnsservice(service);
-});
-
-// handle if mdns server goes offline
-mdnsbrowser.on("serviceDown", function(service) {
-    console.log("MDNS service went down: ", service);
-});
-
-// store detected sensors
-var sensors = {};
-
-// connect to database and check/create required tables
-function prepare_database() {
-    // connect to database
-    database.connect(function(err) {
-        if (err) throw err;
-        console.log("Database flm successfully connected");
-    });
-    // define the config persistence if it does not exist
-    var createTabStr = "CREATE TABLE IF NOT EXISTS flmconfig" + "( sensor CHAR(32)," + "  name CHAR(32)," + "  UNIQUE KEY (sensor)" + ");";
-    // and send the create command to the database
-    database.query(createTabStr, function(err, res) {
-        if (err) {
-            database.end();
-            throw err;
-        }
-        console.log("Create/connect to config table successful...");
-    });
-    // define the data persistence if it does not exist
-    createTabStr = "CREATE TABLE IF NOT EXISTS flmdata" + "( sensor CHAR(32)," + "  timestamp CHAR(10)," + "  value CHAR(5)," + "  unit CHAR(5)," + "  UNIQUE KEY (sensor, timestamp)," + "  INDEX idx_time (timestamp)" + ");";
-    // and send the create command to the database
-    database.query(createTabStr, function(err, res) {
-        if (err) {
-            database.end();
-            throw err;
-        }
-        console.log("Create/connect to data table successful...");
-    });
-}
-
-function mdnsservice(service) {
     console.log("Detected MQTT service on: " + service.addresses[0] + ":" + service.port);
     mqttclient = mqtt.connect({
         port: service.port,
@@ -122,18 +147,6 @@ function mdnsservice(service) {
     mqttclient.on("error", function() {
         // error handling to be a bit more sophisticated...
         console.log("An MQTT error occurred...");
-    });
-    // handle socketio requests
-    io.on("connection", function(socket) {
-        // handle database query request
-        socket.on("query", function(data) {
-            console.log("Socket received query request...");
-            handlequery(data);
-        });
-        // handle additional subscription request(s)
-        socket.on("subscribe", function(data) {
-            mqttclient.subscribe(data.topic);
-        });
     });
     // handle mqtt messages
     mqttclient.on("message", function(topic, message) {
@@ -222,6 +235,47 @@ function mdnsservice(service) {
             break;
         }
     }
+});
+
+// handle if mdns server goes offline
+mdnsbrowser.on("serviceDown", function(service) {
+    console.log("MDNS service went down: ", service);
+});
+
+// advertise the http server on the httpport
+var ad = new mdns.Advertisement(mdns.tcp("http"), httpport, {
+    name: "FLM visualization and persistence"
+});
+
+ad.start();
+
+// connect to database and check/create required tables
+function prepare_database() {
+    // connect to database
+    database.connect(function(err) {
+        if (err) throw err;
+        console.log("Database flm successfully connected");
+    });
+    // define the config persistence if it does not exist
+    var createTabStr = "CREATE TABLE IF NOT EXISTS flmconfig" + "( sensor CHAR(32)," + "  name CHAR(32)," + "  UNIQUE KEY (sensor)" + ");";
+    // and send the create command to the database
+    database.query(createTabStr, function(err, res) {
+        if (err) {
+            database.end();
+            throw err;
+        }
+        console.log("Create/connect to config table successful...");
+    });
+    // define the data persistence if it does not exist
+    createTabStr = "CREATE TABLE IF NOT EXISTS flmdata" + "( sensor CHAR(32)," + "  timestamp CHAR(10)," + "  value CHAR(5)," + "  unit CHAR(5)," + "  UNIQUE KEY (sensor, timestamp)," + "  INDEX idx_time (timestamp)" + ");";
+    // and send the create command to the database
+    database.query(createTabStr, function(err, res) {
+        if (err) {
+            database.end();
+            throw err;
+        }
+        console.log("Create/connect to data table successful...");
+    });
 }
 
 // Serve the index.html page
@@ -259,63 +313,5 @@ function httphandler(req, res) {
             res.write(file, "binary");
             res.end();
         });
-    });
-}
-
-// define what shall be done on a io request
-function handlequery(data) {
-    // send message that data load it started...
-    io.sockets.emit("info", "<center>Loading...</center>");
-    // get time interval to query
-    var fromTimestamp = data.fromTimestamp;
-    var toTimestamp = data.toTimestamp;
-    // log the query request
-    console.log("Handling query from " + fromTimestamp + " to " + toTimestamp);
-    // check delivered interval
-    if (toTimestamp < fromTimestamp) {
-        var temp = fromTimestamp;
-        fromTimestamp = toTimestamp;
-        toTimestamp = temp;
-    }
-    var timeLen = toTimestamp - fromTimestamp;
-    // check if interval is small enough to query
-    if (timeLen > 12 * 60 * 60) {
-        io.sockets.emit("info", "<center><strong>Time interval too large to query...</strong></center>");
-        return;
-    }
-    // fetch flm data from database
-    var queryStr = "SELECT * FROM flmdata WHERE timestamp >= '" + fromTimestamp + "' AND timestamp <= '" + toTimestamp + "';";
-    var query = database.query(queryStr, function(err, rows, fields) {
-        if (err) throw err;
-        var series = {};
-        for (var i in rows) {
-            var sensorId = rows[i].sensor;
-            if (sensors[sensorId] != null) sensorId = sensors[sensorId].name;
-            if (series[sensorId] == null) series[sensorId] = new Array();
-            series[sensorId].push([ rows[i].timestamp * 1e3, rows[i].value ]);
-        }
-        // reduce the time series length through averages
-        if (timeLen > 2 * 60 * 60) {
-            for (var s in series) {
-                var n = 0, avg = 0;
-                var ser = new Array();
-                for (var v in series[s]) {
-                    // series[s][v] delivers the single series [timestamp,value]
-                    n++;
-                    avg += parseInt(series[s][v][1]);
-                    tim = new Date(series[s][v][0]);
-                    if (tim.getSeconds() == 0) {
-                        avg = Math.round(avg / n);
-                        ser.push([ series[s][v][0], avg ]);
-                        avg = 0;
-                        n = 0;
-                    }
-                }
-                series[s] = ser;
-            }
-        }
-        // send data to requester
-        io.sockets.emit("series", series);
-        console.log("Queried series transmitted...");
     });
 }

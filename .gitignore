@@ -1,6 +1,7 @@
 # ignore all OS specific files
 .DS_Store
-nohup.out
+./nohup.out
+combined/nohup.out
 Thumbs.db
 *.log
 # ignore AVR Studio specific files
