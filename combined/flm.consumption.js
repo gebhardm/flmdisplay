@@ -6,7 +6,7 @@ var cfgVis = true;
 socket.on("connect", function() {
     // emit the subscription
     socket.emit("subscribe", {
-        topic: "/device/#"
+        topic: "/device/+/config/#"
     });
     socket.emit("subscribe", {
         topic: "/sensor/+/gauge"
@@ -73,6 +73,9 @@ socket.on("connect", function() {
                 break;
 
               case 2:
+                if (value[1] !== "W") break;
+                sensor.value = value[0];
+                sensor.unit = value[1];
                 break;
 
               case 3:
@@ -127,37 +130,6 @@ socket.on("connect", function() {
         var selfuseValue = productionValue > consumptionValue ? consumptionValue : productionValue;
         var supplyValue = productionValue > consumptionValue ? productionValue - consumptionValue : 0;
         var obtainedValue = consumptionValue - productionValue > 0 ? consumptionValue - productionValue : 0;
-        // compute the scaling
-        var scale = $("#image").width() / 1226;
-        var pos = $("#image").offset();
-        // format the output
-        $(".watt").css("position", "absolute");
-        $(".watt").css("width", 307 * scale + "px");
-        $(".watt").css("text-align", "center");
-        $(".watt").css("color", "rgb(91,155,213)");
-        $(".watt").css("font-family", "arial");
-        $(".watt").css("font-size", 64 * scale + "px");
-        $(".watt").css("font-weight", "bold");
-        //$(".watt").css("border", "solid grey 2px");
-        $("#grid").css("top", pos.top + 245 * scale + "px");
-        $("#grid").css("left", pos.left + 60 * scale + "px");
-        $("#supply").css("top", pos.top + 40 * scale + "px");
-        $("#supply").css("left", pos.left + 500 * scale + "px");
-        $("#selfuse").css("top", pos.top + 420 * scale + "px");
-        $("#selfuse").css("left", pos.left + 740 * scale + "px");
-        $("#production").css("top", pos.top + 245 * scale + "px");
-        $("#production").css("left", pos.left + 910 * scale + "px");
-        $("#consumption").css("top", pos.top + 795 * scale + "px");
-        $("#consumption").css("left", pos.left + 480 * scale + "px");
-        $("#obtained").css("top", pos.top + 420 * scale + "px");
-        $("#obtained").css("left", pos.left + 220 * scale + "px");
-        $("#status").css("position", "absolute");
-        $("#status").css("top", pos.top + 560 * scale + "px");
-        $("#status").css("left", pos.left + 455 * scale + "px");
-        $("#status").css("width", 360 * scale + "px");
-        $("#status").css("height", 360 * scale + "px");
-        $("#status").css("border-radius", 60 * scale + "px");
-        $("#status").css("opacity", "0.2");
         // write the values to the display
         $("#grid").html(gridValue + "W");
         $("#supply").html(supplyValue + "W");
@@ -175,6 +147,39 @@ socket.on("connect", function() {
 
 $(document).ready(function() {
     $("#image").append('<img src="img/EnergyConsumption.png" width=' + $("#image").width() + ' alt="Consumption Graphics" />');
+    // compute the scaling
+    var img = $("#image");
+    var width = img.width();
+    var scale = width / 1226;
+    var pos = img.offset();
+    // format the output
+    $(".watt").css("position", "absolute");
+    $(".watt").css("width", 307 * scale + "px");
+    $(".watt").css("text-align", "center");
+    $(".watt").css("color", "rgb(91,155,213)");
+    $(".watt").css("font-family", "arial");
+    $(".watt").css("font-size", 64 * scale + "px");
+    $(".watt").css("font-weight", "bold");
+    $("#grid").css("top", pos.top + 245 * scale + "px");
+    $("#grid").css("left", pos.left + 60 * scale + "px");
+    $("#supply").css("top", pos.top + 40 * scale + "px");
+    $("#supply").css("left", pos.left + 500 * scale + "px");
+    $("#selfuse").css("top", pos.top + 420 * scale + "px");
+    $("#selfuse").css("left", pos.left + 740 * scale + "px");
+    $("#production").css("top", pos.top + 245 * scale + "px");
+    $("#production").css("left", pos.left + 910 * scale + "px");
+    $("#consumption").css("top", pos.top + 795 * scale + "px");
+    $("#consumption").css("left", pos.left + 480 * scale + "px");
+    $("#obtained").css("top", pos.top + 420 * scale + "px");
+    $("#obtained").css("left", pos.left + 220 * scale + "px");
+    $("#status").css("position", "absolute");
+    $("#status").css("top", pos.top + 560 * scale + "px");
+    $("#status").css("left", pos.left + 455 * scale + "px");
+    $("#status").css("width", 360 * scale + "px");
+    $("#status").css("height", 360 * scale + "px");
+    $("#status").css("border-radius", 60 * scale + "px");
+    $("#status").css("opacity", "0.2");
+    // toggle the configuration
     $("#toggle").click(function() {
         if (cfgVis) $("#choices").hide(); else $("#choices").show();
         cfgVis = !cfgVis;
