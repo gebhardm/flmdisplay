@@ -14,9 +14,6 @@
     <script type="text/javascript" src="js/jquery.min.js"></script>
     <!-- socket.io for communication -->
     <script type="text/javascript" src="js/socket.io.js"></script>
-    <!-- gauge graphics -->
-    <script type="text/javascript" src="js/raphael.min.js"></script>
-    <script type="text/javascript" src="js/justgage.js"></script>
     <!-- last not least the FLM logic -->
     <script type="text/javascript" src="flm.buttons.js"></script>
     <script type="text/javascript" src="flm.consumption.js"></script>
@@ -28,7 +25,8 @@
           <h1>FluksoConsumption</h1>
         </div>
         <div class="panel panel-default">
-          <div class="panel-body" id="image">
+          <div class="panel-body">
+            <img id="image" src="img/EnergyConsumption.png" width="100%" alt="Consumption Graphics" />
             <div id="grid" class="watt"></div>
             <div id="supply" class="watt"></div>
             <div id="selfuse" class="watt"></div>

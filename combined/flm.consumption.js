@@ -146,12 +146,11 @@ socket.on("connect", function() {
 });
 
 $(document).ready(function() {
-    $("#image").append('<img src="img/EnergyConsumption.png" width=' + $("#image").width() + ' alt="Consumption Graphics" />');
     // compute the scaling
     var img = $("#image");
     var width = img.width();
     var scale = width / 1226;
-    var pos = img.offset();
+    var pos = img.position();
     // format the output
     $(".watt").css("position", "absolute");
     $(".watt").css("width", 307 * scale + "px");
@@ -160,21 +159,21 @@ $(document).ready(function() {
     $(".watt").css("font-family", "arial");
     $(".watt").css("font-size", 64 * scale + "px");
     $(".watt").css("font-weight", "bold");
-    $("#grid").css("top", pos.top + 245 * scale + "px");
-    $("#grid").css("left", pos.left + 60 * scale + "px");
-    $("#supply").css("top", pos.top + 40 * scale + "px");
-    $("#supply").css("left", pos.left + 500 * scale + "px");
+    $("#grid").css("top", pos.top + 230 * scale + "px");
+    $("#grid").css("left", pos.left + 30 * scale + "px");
+    $("#supply").css("top", pos.top + 10 * scale + "px");
+    $("#supply").css("left", pos.left + 460 * scale + "px");
     $("#selfuse").css("top", pos.top + 420 * scale + "px");
     $("#selfuse").css("left", pos.left + 740 * scale + "px");
-    $("#production").css("top", pos.top + 245 * scale + "px");
-    $("#production").css("left", pos.left + 910 * scale + "px");
-    $("#consumption").css("top", pos.top + 795 * scale + "px");
-    $("#consumption").css("left", pos.left + 480 * scale + "px");
+    $("#production").css("top", pos.top + 230 * scale + "px");
+    $("#production").css("left", pos.left + 890 * scale + "px");
+    $("#consumption").css("top", pos.top + 760 * scale + "px");
+    $("#consumption").css("left", pos.left + 460 * scale + "px");
     $("#obtained").css("top", pos.top + 420 * scale + "px");
-    $("#obtained").css("left", pos.left + 220 * scale + "px");
+    $("#obtained").css("left", pos.left + 180 * scale + "px");
     $("#status").css("position", "absolute");
-    $("#status").css("top", pos.top + 560 * scale + "px");
-    $("#status").css("left", pos.left + 455 * scale + "px");
+    $("#status").css("top", pos.top + 540 * scale + "px");
+    $("#status").css("left", pos.left + 435 * scale + "px");
     $("#status").css("width", 360 * scale + "px");
     $("#status").css("height", 360 * scale + "px");
     $("#status").css("border-radius", 60 * scale + "px");
