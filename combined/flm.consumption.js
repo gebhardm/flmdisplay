@@ -99,7 +99,7 @@ socket.on("connect", function() {
             }
             // compute the selected sensor type
             var selElt = document.getElementById("type " + sensor.name);
-            sensor.type = selElt.options[selElt.selectedIndex].value;
+            if (selElt !== null) sensor.type = selElt.options[selElt.selectedIndex].value;
             sensors[sensorId] = sensor;
             break;
 
@@ -145,39 +145,49 @@ socket.on("connect", function() {
     }
 });
 
-$(document).ready(function() {
+function display_resize() {
     // compute the scaling
     var img = $("#image");
     var width = img.width();
     var scale = width / 1226;
     var pos = img.position();
-    // format the output
-    $(".watt").css("position", "absolute");
-    $(".watt").css("width", 307 * scale + "px");
-    $(".watt").css("text-align", "center");
-    $(".watt").css("color", "rgb(91,155,213)");
-    $(".watt").css("font-family", "arial");
-    $(".watt").css("font-size", 64 * scale + "px");
-    $(".watt").css("font-weight", "bold");
-    $("#grid").css("top", pos.top + 230 * scale + "px");
-    $("#grid").css("left", pos.left + 30 * scale + "px");
-    $("#supply").css("top", pos.top + 10 * scale + "px");
-    $("#supply").css("left", pos.left + 460 * scale + "px");
-    $("#selfuse").css("top", pos.top + 420 * scale + "px");
-    $("#selfuse").css("left", pos.left + 740 * scale + "px");
-    $("#production").css("top", pos.top + 230 * scale + "px");
-    $("#production").css("left", pos.left + 890 * scale + "px");
-    $("#consumption").css("top", pos.top + 760 * scale + "px");
-    $("#consumption").css("left", pos.left + 460 * scale + "px");
-    $("#obtained").css("top", pos.top + 420 * scale + "px");
-    $("#obtained").css("left", pos.left + 180 * scale + "px");
-    $("#status").css("position", "absolute");
-    $("#status").css("top", pos.top + 540 * scale + "px");
-    $("#status").css("left", pos.left + 435 * scale + "px");
-    $("#status").css("width", 360 * scale + "px");
-    $("#status").css("height", 360 * scale + "px");
-    $("#status").css("border-radius", 60 * scale + "px");
-    $("#status").css("opacity", "0.2");
+    if (pos !== undefined) {
+        // format the output
+        $(".watt").css("position", "absolute");
+        $(".watt").css("width", 307 * scale + "px");
+        $(".watt").css("text-align", "center");
+        $(".watt").css("color", "rgb(91,155,213)");
+        $(".watt").css("font-family", "arial");
+        $(".watt").css("font-size", 64 * scale + "px");
+        $(".watt").css("font-weight", "bold");
+        $("#grid").css("top", pos.top + 230 * scale + "px");
+        $("#grid").css("left", pos.left + 30 * scale + "px");
+        $("#supply").css("top", pos.top + 10 * scale + "px");
+        $("#supply").css("left", pos.left + 460 * scale + "px");
+        $("#selfuse").css("top", pos.top + 420 * scale + "px");
+        $("#selfuse").css("left", pos.left + 740 * scale + "px");
+        $("#production").css("top", pos.top + 230 * scale + "px");
+        $("#production").css("left", pos.left + 890 * scale + "px");
+        $("#consumption").css("top", pos.top + 760 * scale + "px");
+        $("#consumption").css("left", pos.left + 460 * scale + "px");
+        $("#obtained").css("top", pos.top + 420 * scale + "px");
+        $("#obtained").css("left", pos.left + 180 * scale + "px");
+        $("#status").css("position", "absolute");
+        $("#status").css("top", pos.top + 540 * scale + "px");
+        $("#status").css("left", pos.left + 435 * scale + "px");
+        $("#status").css("width", 360 * scale + "px");
+        $("#status").css("height", 360 * scale + "px");
+        $("#status").css("border-radius", 60 * scale + "px");
+        $("#status").css("opacity", "0.2");
+    }
+}
+
+$(document).ready(function() {
+    // size the display
+    display_resize();
+    $(window).resize(function() {
+        display_resize();
+    });
     // toggle the configuration
     $("#toggle").click(function() {
         if (cfgVis) $("#choices").hide(); else $("#choices").show();
