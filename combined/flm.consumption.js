@@ -1,45 +1,18 @@
 // link to the web server's IP address for socket connection
 var socket = io.connect(location.host);
 
+var cfgVis = true;
+
 socket.on("connect", function() {
     // emit the subscription
     socket.emit("subscribe", {
-        topic: "/device/#"
+        topic: "/device/+/config/#"
     });
     socket.emit("subscribe", {
         topic: "/sensor/+/gauge"
     });
     // objects containing the actual sensor data
     var sensors = {};
-    var limit = 3600;
-    // initialize the consumption gauges
-    var grid = new JustGage({
-        id: "grid",
-        value: 0,
-        title: "Grid",
-        label: "W",
-        min: 0,
-        max: limit,
-        decimals: 0
-    });
-    var production = new JustGage({
-        id: "production",
-        value: 0,
-        title: "Production",
-        label: "W",
-        min: 0,
-        max: limit,
-        decimals: 0
-    });
-    var consumption = new JustGage({
-        id: "consumption",
-        value: 0,
-        title: "Consumption",
-        label: "W",
-        min: 0,
-        max: limit,
-        decimals: 0
-    });
     // handle the received MQTT messages
     socket.on("mqtt", function(msg) {
         // split the received message at the slashes
@@ -100,6 +73,9 @@ socket.on("connect", function() {
                 break;
 
               case 2:
+                if (value[1] !== "W") break;
+                sensor.value = value[0];
+                sensor.unit = value[1];
                 break;
 
               case 3:
@@ -119,19 +95,11 @@ socket.on("connect", function() {
             }
             // now build the gauge display
             if (sensor.type == null && sensor.unit === "W") {
-                $("#choices").append("<div class='form-inline'>" + 
-                                     "<label for='type " + sensor.name + 
-                                     "' class='control-label col-sm-2'>" + sensor.name + 
-                                     "</label>" + 
-                                     "<select id='type " + sensor.name + "'>" + 
-                                     "<option>Consumption</option>" + 
-                                     "<option>Production</option>" + 
-                                     "</select>" + 
-                                     "</div>");
+                $("#choices").append("<div class='form-inline'>" + "<label for='type " + sensor.name + "' class='control-label col-sm-2'>" + sensor.name + "</label>" + "<select id='type " + sensor.name + "'>" + "<option>Consumption</option>" + "<option>Production</option>" + "</select>" + "</div>");
             }
             // compute the selected sensor type
             var selElt = document.getElementById("type " + sensor.name);
-            sensor.type = selElt.options[selElt.selectedIndex].value;
+            if (selElt !== null) sensor.type = selElt.options[selElt.selectedIndex].value;
             sensors[sensorId] = sensor;
             break;
 
@@ -159,21 +127,70 @@ socket.on("connect", function() {
             }
         }
         var gridValue = consumptionValue - productionValue;
-        // update the gauges
-        if (gridValue > limit) {
-            grid.refresh(gridValue, gridValue);
+        var selfuseValue = productionValue > consumptionValue ? consumptionValue : productionValue;
+        var supplyValue = productionValue > consumptionValue ? productionValue - consumptionValue : 0;
+        var obtainedValue = consumptionValue - productionValue > 0 ? consumptionValue - productionValue : 0;
+        // write the values to the display
+        $("#grid").html(gridValue + "W");
+        $("#supply").html(supplyValue + "W");
+        $("#production").html(productionValue + "W");
+        $("#selfuse").html(selfuseValue + "W");
+        $("#consumption").html(consumptionValue + "W");
+        $("#obtained").html(obtainedValue + "W");
+        if (productionValue >= consumptionValue) {
+            $("#status").css("background-color", "green");
         } else {
-            grid.refresh(gridValue);
-        }
-        if (productionValue > limit) {
-            production.refresh(productionValue, productionValue);
-        } else {
-            production.refresh(productionValue);
-        }
-        if (consumptionValue > limit) {
-            consumption.refresh(consumptionValue, consumptionValue);
-        } else {
-            consumption.refresh(consumptionValue);
+            $("#status").css("background-color", "red");
         }
     }
+});
+
+function display_resize() {
+    // compute the scaling
+    var img = $("#image");
+    var width = img.width();
+    var scale = width / 1226;
+    var pos = img.position();
+    if (pos !== undefined) {
+        // format the output
+        $(".watt").css("position", "absolute");
+        $(".watt").css("width", 307 * scale + "px");
+        $(".watt").css("text-align", "center");
+        $(".watt").css("color", "rgb(91,155,213)");
+        $(".watt").css("font-family", "arial");
+        $(".watt").css("font-size", 64 * scale + "px");
+        $(".watt").css("font-weight", "bold");
+        $("#grid").css("top", pos.top + 230 * scale + "px");
+        $("#grid").css("left", pos.left + 30 * scale + "px");
+        $("#supply").css("top", pos.top + 10 * scale + "px");
+        $("#supply").css("left", pos.left + 460 * scale + "px");
+        $("#selfuse").css("top", pos.top + 420 * scale + "px");
+        $("#selfuse").css("left", pos.left + 740 * scale + "px");
+        $("#production").css("top", pos.top + 230 * scale + "px");
+        $("#production").css("left", pos.left + 890 * scale + "px");
+        $("#consumption").css("top", pos.top + 760 * scale + "px");
+        $("#consumption").css("left", pos.left + 460 * scale + "px");
+        $("#obtained").css("top", pos.top + 420 * scale + "px");
+        $("#obtained").css("left", pos.left + 180 * scale + "px");
+        $("#status").css("position", "absolute");
+        $("#status").css("top", pos.top + 540 * scale + "px");
+        $("#status").css("left", pos.left + 435 * scale + "px");
+        $("#status").css("width", 360 * scale + "px");
+        $("#status").css("height", 360 * scale + "px");
+        $("#status").css("border-radius", 60 * scale + "px");
+        $("#status").css("opacity", "0.2");
+    }
+}
+
+$(document).ready(function() {
+    // size the display
+    display_resize();
+    $(window).resize(function() {
+        display_resize();
+    });
+    // toggle the configuration
+    $("#toggle").click(function() {
+        if (cfgVis) $("#choices").hide(); else $("#choices").show();
+        cfgVis = !cfgVis;
+    });
 });
