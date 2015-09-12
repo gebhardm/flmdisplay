@@ -156,8 +156,7 @@ socket.on("connect", function() {
 function display_resize() {
     // compute the scaling
     var img = $("#image");
-    var width = img.width();
-    var scale = width / 1226;
+    var scale = img.width() / 1226;
     var pos = img.position();
     if (pos !== undefined) {
         // format the output
@@ -200,5 +199,7 @@ $(document).ready(function() {
         cfgVis = !cfgVis;
     });
     // size the display
-    display_resize();
+    $("#image").on("load", function() {
+        display_resize();
+    });
 });
