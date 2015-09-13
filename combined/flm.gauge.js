@@ -1,6 +1,8 @@
 // objects containing the actual sensor data
 var sensors = {}, numGauges = 0;
 
+var msgVis = true;
+
 // link to the web server's IP address for socket connection
 var socket = io.connect(location.host);
 
@@ -136,5 +138,13 @@ socket.on("connect", function() {
     });
     socket.emit("subscribe", {
         topic: "/sensor/#"
+    });
+});
+
+$(document).ready(function() {
+    // toggle the message display    
+    $("#toggle").click(function() {
+        if (msgVis) $("#choices").hide(); else $("#choices").show();
+        msgVis = !msgVis;
     });
 });

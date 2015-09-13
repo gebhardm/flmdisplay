@@ -8,6 +8,9 @@ corresponding license
 This script under MIT-license, as is, without any warranty
 
 Markus Gebhard, Karlsruhe, May/August 2014, (c) */
+// show or hide selection
+var selVis = true;
+
 // determine locally stored time interval
 var chart = new Array();
 
@@ -193,4 +196,9 @@ $(document).ready(function() {
         $("#info").html("");
         socket.emit("query", data);
     }
+    // toggle the selection
+    $("#toggle").click(function() {
+        if (selVis) $("#choices").hide(); else $("#choices").show();
+        selVis = !selVis;
+    });
 });

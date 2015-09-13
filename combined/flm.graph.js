@@ -1,3 +1,5 @@
+var selVis = true;
+
 $(function() {
     // allow tooltip on datapoints
     $("<div id='tooltip'></div>").css({
@@ -23,7 +25,11 @@ $(function() {
             }).fadeIn(200);
         } else $("#tooltip").hide();
     });
-});
+    // toggle the selection    
+    $("#toggle").click(function() {
+        if (selVis) $("#choices").hide(); else $("#choices").show();
+        selVis = !selVis;
+    });});
 
 // link to the web server's IP address for socket connection
 var socket = io.connect(location.host);

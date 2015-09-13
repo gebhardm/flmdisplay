@@ -1,3 +1,13 @@
+// show or hide message display
+var msgVis = true;
+
+$(document).ready(function() {
+    // toggle the selection    
+    $("#toggle").click(function() {
+        if (msgVis) $("#choices").hide(); else $("#choices").show();
+        msgVis = !msgVis;
+    });});
+
 // objects containing the actual sensor data as string and value
 var sensors = {}, numGauges = 0;
 
