@@ -1,4 +1,5 @@
-var selVis = true;
+// state of showing the information panel
+var infoVis = true;
 
 $(function() {
     // allow tooltip on datapoints
@@ -27,9 +28,10 @@ $(function() {
     });
     // toggle the selection    
     $("#toggle").click(function() {
-        if (selVis) $("#choices").hide(); else $("#choices").show();
-        selVis = !selVis;
-    });});
+        if (infoVis) $("#infopanel").hide(); else $("#infopanel").show();
+        infoVis = !infoVis;
+    });
+});
 
 // link to the web server's IP address for socket connection
 var socket = io.connect(location.host);
@@ -191,9 +193,9 @@ socket.on("connect", function() {
         sensors[sensorId] = sensor;
     }
     socket.emit("subscribe", {
-        topic: "/device/#"
+        topic: "/device/+/config/sensor"
     });
     socket.emit("subscribe", {
-        topic: "/sensor/#"
+        topic: "/sensor/+/gauge"
     });
 });

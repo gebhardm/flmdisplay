@@ -1,7 +1,7 @@
 // objects containing the actual sensor data
 var sensors = {}, numGauges = 0;
 
-var msgVis = true;
+var infoVis = true;
 
 // link to the web server's IP address for socket connection
 var socket = io.connect(location.host);
@@ -134,17 +134,17 @@ socket.on("connect", function() {
     }
     // emit the subscription
     socket.emit("subscribe", {
-        topic: "/device/#"
+        topic: "/device/+/config/sensor"
     });
     socket.emit("subscribe", {
-        topic: "/sensor/#"
+        topic: "/sensor/+/gauge"
     });
 });
 
 $(document).ready(function() {
     // toggle the message display    
     $("#toggle").click(function() {
-        if (msgVis) $("#choices").hide(); else $("#choices").show();
-        msgVis = !msgVis;
+        if (infoVis) $("#infopanel").hide(); else $("#infopanel").show();
+        infoVis = !infoVis;
     });
 });

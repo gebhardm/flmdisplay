@@ -1,12 +1,13 @@
 // show or hide message display
-var msgVis = true;
+var infoVis = true;
 
 $(document).ready(function() {
     // toggle the selection    
     $("#toggle").click(function() {
-        if (msgVis) $("#choices").hide(); else $("#choices").show();
-        msgVis = !msgVis;
-    });});
+        if (infoVis) $("#infopanel").hide(); else $("#infopanel").show();
+        infoVis = !infoVis;
+    });
+});
 
 // objects containing the actual sensor data as string and value
 var sensors = {}, numGauges = 0;
@@ -136,6 +137,9 @@ socket.on("connect", function() {
         topic: "/device/+/config/sensor"
     });
     socket.emit("subscribe", {
-        topic: "/sensor/#"
+        topic: "/sensor/+/gauge"
+    });
+	socket.emit("subscribe", {
+        topic: "/sensor/+/counter"
     });
 });

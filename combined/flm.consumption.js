@@ -1,12 +1,12 @@
 // link to the web server's IP address for socket connection
 var socket = io.connect(location.host);
 
-var cfgVis = true;
+var infoVis = true;
 
 socket.on("connect", function() {
     // emit the subscription
     socket.emit("subscribe", {
-        topic: "/device/+/config/#"
+        topic: "/device/+/config/sensor"
     });
     socket.emit("subscribe", {
         topic: "/sensor/+/gauge"
@@ -195,8 +195,8 @@ $(document).ready(function() {
     });
     // toggle the configuration
     $("#toggle").click(function() {
-        if (cfgVis) $("#choices").hide(); else $("#choices").show();
-        cfgVis = !cfgVis;
+        if (infoVis) $("#infopanel").hide(); else $("#infopanel").show();
+        infoVis = !infoVis;
     });
     // size the display
     $("#image").on("load", function() {
