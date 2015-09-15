@@ -1,12 +1,12 @@
 // link to the web server's IP address for socket connection
 var socket = io.connect(location.host);
 
-var cfgVis = true;
+var infoVis = true;
 
 socket.on("connect", function() {
     // emit the subscription
     socket.emit("subscribe", {
-        topic: "/device/+/config/#"
+        topic: "/device/+/config/sensor"
     });
     socket.emit("subscribe", {
         topic: "/sensor/+/gauge"
@@ -156,8 +156,7 @@ socket.on("connect", function() {
 function display_resize() {
     // compute the scaling
     var img = $("#image");
-    var width = img.width();
-    var scale = width / 1226;
+    var scale = img.width() / 1226;
     var pos = img.position();
     if (pos !== undefined) {
         // format the output
@@ -196,9 +195,11 @@ $(document).ready(function() {
     });
     // toggle the configuration
     $("#toggle").click(function() {
-        if (cfgVis) $("#choices").hide(); else $("#choices").show();
-        cfgVis = !cfgVis;
+        if (infoVis) $("#infopanel").hide(); else $("#infopanel").show();
+        infoVis = !infoVis;
     });
     // size the display
-    display_resize();
+    $("#image").on("load", function() {
+        display_resize();
+    });
 });

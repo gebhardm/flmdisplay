@@ -1,3 +1,6 @@
+// state of showing the information panel
+var infoVis = true;
+
 $(function() {
     // allow tooltip on datapoints
     $("<div id='tooltip'></div>").css({
@@ -22,6 +25,11 @@ $(function() {
                 left: item.pageX + 5
             }).fadeIn(200);
         } else $("#tooltip").hide();
+    });
+    // toggle the selection    
+    $("#toggle").click(function() {
+        if (infoVis) $("#infopanel").hide(); else $("#infopanel").show();
+        infoVis = !infoVis;
     });
 });
 
@@ -185,9 +193,9 @@ socket.on("connect", function() {
         sensors[sensorId] = sensor;
     }
     socket.emit("subscribe", {
-        topic: "/device/#"
+        topic: "/device/+/config/sensor"
     });
     socket.emit("subscribe", {
-        topic: "/sensor/#"
+        topic: "/sensor/+/gauge"
     });
 });
