@@ -190,6 +190,11 @@ function display_resize() {
 }
 
 $(document).ready(function() {
+    var infoPanel = localStorage.getItem("infoVis");
+    if (infoPanel === "false") {
+        $("#infopanel").hide();
+        infoVis = false;
+    }
     $(window).resize(function() {
         display_resize();
     });
@@ -197,6 +202,7 @@ $(document).ready(function() {
     $("#toggle").click(function() {
         if (infoVis) $("#infopanel").hide(); else $("#infopanel").show();
         infoVis = !infoVis;
+        localStorage.setItem("infoVis", infoVis);
     });
     // size the display
     $("#image").on("load", function() {
