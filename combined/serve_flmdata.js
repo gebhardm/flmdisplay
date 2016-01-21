@@ -237,9 +237,14 @@ mdnsbrowser.on("serviceUp", function(service) {
     }
 });
 
-// handle if mdns server goes offline
+// handle if mdns service goes offline
 mdnsbrowser.on("serviceDown", function(service) {
     console.log("MDNS service went down: ", service);
+});
+
+// handle if mdns throws an error
+mdnsbrowser.on("error", function(exception) {
+    console.log("MDNS service threw an error: ", exception);
 });
 
 // advertise the http server on the httpport
