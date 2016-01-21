@@ -45,10 +45,37 @@ prepare_database();
 // use mqtt for client, socket.io for push,
 var mqtt = require("mqtt");
 
-var mqttclient;
-
 // multicast DNS service discovery
 var mdns = require("mdns");
+
+// detect mqtt publishers and create corresponding servers
+var mdnsbrowser = mdns.createBrowser(mdns.tcp("mqtt"));
+
+// handle detected devices
+mdnsbrowser.on("serviceUp", function(service) {
+    console.log("Detected MQTT service on: " + service.addresses[0] + ":" + service.port);
+    handle_mqtt_service(service.addresses[0], service.port);
+});
+
+// handle if mdns service goes offline
+mdnsbrowser.on("serviceDown", function(service) {
+    console.log("MDNS service went down: ", service);
+});
+
+// handle if mdns throws an error
+mdnsbrowser.on("error", function(exception) {
+    console.log("MDNS service threw an error: ", exception);
+});
+
+// start the mdns browser
+mdnsbrowser.start();
+
+// advertise the http server on the httpport
+var ad = new mdns.Advertisement(mdns.tcp("http"), httpport, {
+    name: "FLM visualization and persistence"
+});
+
+ad.start();
 
 // the socket listens on the http port
 var io = require("socket.io")(http);
@@ -123,18 +150,11 @@ io.on("connection", function(socket) {
     }
 });
 
-// detect mqtt publishers and create corresponding servers
-var mdnsbrowser = mdns.createBrowser(mdns.tcp("mqtt"));
-
-// mdnsbrowser.on
-mdnsbrowser.start();
-
-// handle detected devices
-mdnsbrowser.on("serviceUp", function(service) {
-    console.log("Detected MQTT service on: " + service.addresses[0] + ":" + service.port);
-    mqttclient = mqtt.connect({
-        port: service.port,
-        host: service.addresses[0]
+// handle the detected mqtt service
+function handle_mqtt_service(address, port) {
+    var mqttclient = mqtt.connect({
+        port: port,
+        host: address
     });
     mqttclient.on("connect", function() {
         var now = new Date();
@@ -235,24 +255,7 @@ mdnsbrowser.on("serviceUp", function(service) {
             break;
         }
     }
-});
-
-// handle if mdns service goes offline
-mdnsbrowser.on("serviceDown", function(service) {
-    console.log("MDNS service went down: ", service);
-});
-
-// handle if mdns throws an error
-mdnsbrowser.on("error", function(exception) {
-    console.log("MDNS service threw an error: ", exception);
-});
-
-// advertise the http server on the httpport
-var ad = new mdns.Advertisement(mdns.tcp("http"), httpport, {
-    name: "FLM visualization and persistence"
-});
-
-ad.start();
+}
 
 // connect to database and check/create required tables
 function prepare_database() {
