@@ -45,6 +45,8 @@ prepare_database();
 // use mqtt for client, socket.io for push,
 var mqtt = require("mqtt");
 
+var mqttclient;
+
 // multicast DNS service discovery
 var mdns = require("mdns");
 
@@ -96,70 +98,74 @@ io.on("connection", function(socket) {
     });
     // handle additional subscription request(s)
     socket.on("subscribe", function(data) {
-        mqttclient.subscribe(data.topic);
+        // console.log("Socket received subscribe:", data.topic);
+        if (mqttclient != null) {
+            mqttclient.subscribe(data.topic);
+        }
     });
-    // define what shall be done on a io request
-    function handlequery(data) {
-        // send message that data load it started...
-        io.sockets.emit("info", "<center>Loading...</center>");
-        // get time interval to query
-        var fromTimestamp = data.fromTimestamp;
-        var toTimestamp = data.toTimestamp;
-        // log the query request
-        console.log("Handling query from " + fromTimestamp + " to " + toTimestamp);
-        // check delivered interval
-        if (toTimestamp < fromTimestamp) {
-            var temp = fromTimestamp;
-            fromTimestamp = toTimestamp;
-            toTimestamp = temp;
-        }
-        var timeLen = toTimestamp - fromTimestamp;
-        // check if interval is small enough to query
-        if (timeLen > 12 * 60 * 60) {
-            io.sockets.emit("info", "<center><strong>Time interval too large to query...</strong></center>");
-            return;
-        }
-        // fetch flm data from database
-        var queryStr = "SELECT * FROM flmdata WHERE timestamp >= '" + fromTimestamp + "' AND timestamp <= '" + toTimestamp + "';";
-        var query = database.query(queryStr, function(err, rows, fields) {
-            if (err) throw err;
-            var series = {};
-            for (var i in rows) {
-                var sensorId = rows[i].sensor;
-                if (sensors[sensorId] != null) sensorId = sensors[sensorId].name;
-                if (series[sensorId] == null) series[sensorId] = new Array();
-                series[sensorId].push([ rows[i].timestamp * 1e3, rows[i].value ]);
-            }
-            // reduce the time series length through averages
-            if (timeLen > 2 * 60 * 60) {
-                for (var s in series) {
-                    var n = 0, avg = 0;
-                    var ser = new Array();
-                    for (var v in series[s]) {
-                        // series[s][v] delivers the single series [timestamp,value]
-                        n++;
-                        avg += parseInt(series[s][v][1]);
-                        tim = new Date(series[s][v][0]);
-                        if (tim.getSeconds() == 0) {
-                            avg = Math.round(avg / n);
-                            ser.push([ series[s][v][0], avg ]);
-                            avg = 0;
-                            n = 0;
-                        }
-                    }
-                    series[s] = ser;
-                }
-            }
-            // send data to requester
-            io.sockets.emit("series", series);
-            console.log("Queried series transmitted...");
-        });
-    }
 });
+
+// define what shall be done on a io request
+function handlequery(data) {
+    // send message that data load it started...
+    io.sockets.emit("info", "<center>Loading...</center>");
+    // get time interval to query
+    var fromTimestamp = data.fromTimestamp;
+    var toTimestamp = data.toTimestamp;
+    // log the query request
+    console.log("Handling query from " + fromTimestamp + " to " + toTimestamp);
+    // check delivered interval
+    if (toTimestamp < fromTimestamp) {
+        var temp = fromTimestamp;
+        fromTimestamp = toTimestamp;
+        toTimestamp = temp;
+    }
+    var timeLen = toTimestamp - fromTimestamp;
+    // check if interval is small enough to query
+    if (timeLen > 12 * 60 * 60) {
+        io.sockets.emit("info", "<center><strong>Time interval too large to query...</strong></center>");
+        return;
+    }
+    // fetch flm data from database
+    var queryStr = "SELECT * FROM flmdata WHERE timestamp >= '" + fromTimestamp + "' AND timestamp <= '" + toTimestamp + "';";
+    var query = database.query(queryStr, function(err, rows, fields) {
+        if (err) throw err;
+        var series = {};
+        for (var i in rows) {
+            var sensorId = rows[i].sensor;
+            if (sensors[sensorId] != null) sensorId = sensors[sensorId].name;
+            if (series[sensorId] == null) series[sensorId] = new Array();
+            series[sensorId].push([ rows[i].timestamp * 1e3, rows[i].value ]);
+        }
+        // reduce the time series length through averages
+        if (timeLen > 2 * 60 * 60) {
+            for (var s in series) {
+                var n = 0, avg = 0;
+                var ser = new Array();
+                for (var v in series[s]) {
+                    // series[s][v] delivers the single series [timestamp,value]
+                    n++;
+                    avg += parseInt(series[s][v][1]);
+                    tim = new Date(series[s][v][0]);
+                    if (tim.getSeconds() == 0) {
+                        avg = Math.round(avg / n);
+                        ser.push([ series[s][v][0], avg ]);
+                        avg = 0;
+                        n = 0;
+                    }
+                }
+                series[s] = ser;
+            }
+        }
+        // send data to requester
+        io.sockets.emit("series", series);
+        console.log("Queried series transmitted...");
+    });
+}
 
 // handle the detected mqtt service
 function handle_mqtt_service(address, port) {
-    var mqttclient = mqtt.connect({
+    mqttclient = mqtt.connect({
         port: port,
         host: address
     });
