@@ -48,8 +48,15 @@ var mqtt = require("mqtt");
 // multicast DNS service discovery
 var mdns = require("mdns");
 
+// resolution requence added due to mdns issue - see https://github.com/agnat/node_mdns/issues/130
+var sequence = [ mdns.rst.DNSServiceResolve(), "DNSServiceGetAddrInfo" in mdns.dns_sd ? mdns.rst.DNSServiceGetAddrInfo() : mdns.rst.getaddrinfo({
+    families: [ 4 ]
+}), mdns.rst.makeAddressesUnique() ];
+
 // detect mqtt publishers and create corresponding servers
-var mdnsbrowser = mdns.createBrowser(mdns.tcp("mqtt"));
+var mdnsbrowser = mdns.createBrowser(mdns.tcp("mqtt"), {
+    resolverSequence: sequence
+});
 
 // handle detected devices
 mdnsbrowser.on("serviceUp", function(service) {
@@ -158,7 +165,7 @@ function handle_mqtt_service(address, port) {
     });
     mqttclient.on("connect", function() {
         var now = new Date();
-        console.log(now + " : Connected to " + service.addresses[0] + ":" + service.port);
+        console.log(now + " : Connected to " + address + ":" + port);
         // for the persistence subscription is needed:        
         mqttclient.subscribe("/device/+/config/sensor");
         mqttclient.subscribe("/sensor/+/gauge");
