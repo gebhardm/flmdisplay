@@ -4,10 +4,15 @@ It connects to the FLM's MQTT broker on the discovered IP address(es)
 using the multicast DNS service discovery - so there is no further
 configuration to change.
 
-Make sure the **mdns, mqtt** and **mysql** node_modules are installed; if they are not
-installed, install them using 
+Make sure the **mdns, mqtt** and **mysql** node_modules are installed; if they are not installed, install them using either
 
     npm install mdns mqtt mysql
+    
+or just
+
+    npm install
+    
+utilizing the provided [package.json](package.json) file.
 
 Note: To get the mdns module installed on a Raspberry Pi by npm you also need the
 package libavahi-compat-libdnssd-dev installed in the system:
@@ -29,11 +34,11 @@ retrieval, e.g. by a charting application.
 #Precondition: Setting up the database
 Make sure you have installed a database; in my case it is MySQL.
 
-    sudo apt-get install mysql-server mysql-client
-
+    sudo apt-get install mysql-server
+    
 This installs the database and all dependent packages not already installed.
 During installation you are asked for a root password of the database; I chose
-'raspberry' for this (as a no-brainer to the default RasPi wheezy password)
+'raspberry' for this (as a no-brainer to the default RasPi password)
 Log into the database to create the schema used for storing Flukso data:
 
     mysql -u root -p
@@ -60,6 +65,8 @@ from the prompt):
     mysql> set password for 'pi'@'localhost' = password('raspberry');
     mysql> quit
 
+All this for convenience can also be achieved by just running the [createdb.sh](createdb.sh) script with parameters `flm pi raspberry`.
+
 Now you may log on to the database also as user 'pi':
     
     pi@raspberry ~ $ mysql -u pi -p flm
@@ -67,6 +74,6 @@ Now you may log on to the database also as user 'pi':
     mysql> show tables;
     mysql> select count(*) from flmdata;
 
-Markus Gebhard, May/December 2014, all code under MIT license without any warrenty.
+Markus Gebhard, (c) 2014-2016, all code under MIT license without any warrenty.
 
 Have fun...

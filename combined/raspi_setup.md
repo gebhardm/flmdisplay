@@ -1,16 +1,15 @@
 # About
 
-*serve_flmdata.js* is a Javascript script running on **node.js** to receive and persist Fluksometer readings in a MySQL database and visualizing them in a panel and chart web service - so it needs node.js installed...
+*serve_flmdata.js* is a Javascript script running on **node.js** to receive and persist Fluksometer readings in a MySQL database and visualizing them in a panel and chart web service - so it needs [node.js](http://nodejs.org) installed...
 It connects to the FLM's MQTT broker on the discovered IP address(es) using the multicast DNS service discovery - so there is no further configuration to change beside the required setup steps described in the following.
 
 # Setup on a Raspberry Pi
 
-To use the (combined) Fluksometer persistence and visualization script you have to perform some preparation steps. 
+To use the combined Fluksometer persistence and visualization script you have to perform some preparation steps. 
 
 ## Foundation
 
-Foundation to all following steps is a clean installation of Raspbian Debian Wheezy. Get the current distribution from [www.raspberrypi.org/downloads](http://www.raspberrypi.org/downloads).<br>
-At time of initially setting this up, it was version June 2014 (2014-06-20). I did not experience any issue with a newer fresh install (e.g. with version 2014-09-09) nor after *sudo apt-get update && sudo apt-get upgrade*.
+Foundation to all following steps is a clean installation of Raspbian/Debian. Get the current distribution from [www.raspberrypi.org/downloads](http://www.raspberrypi.org/downloads). I chose the Jessie lite variant.
 
 On fresh install perform the usual RasPi configuration steps
 
@@ -48,6 +47,8 @@ To use the MySQL database for storing data not only via the root user, you have 
 	mysql> set password for 'pi'@'localhost' = password('raspberry');
 	mysql> quit
 
+For convenience the flm database setup can also be performed using the [create.db](createdb.sh) script with parameters `flm pi raspberry`.
+
 Now you may log on to the database also as user 'pi':
 
 	pi@raspberry ~ $ mysql -u pi -p flm
@@ -55,7 +56,7 @@ Now you may log on to the database also as user 'pi':
 
 ## Installing node.js
 
-To run the persistence and visualization script install node.js. For this you may take the sources from [http://github.com/nodejs/node](http://github.com/nodejs/node) and compile node on your Raspberry Pi. Use following command sequence - make sure to select the branch to your convenience
+To run the persistence and visualization script install [node.js](http://nodejs.org). For this you may take the sources from [http://github.com/nodejs/node](http://github.com/nodejs/node) and compile node on your Raspberry Pi. Use following command sequence - make sure to select the branch to your convenience
 
 	cd ~
 	git clone http://github.com/joyent/node
@@ -77,7 +78,6 @@ This shows the respective versions of *node* and the *node package manager*.
 
 As an easy alternative **you may obtain a precompiled installation from [Adafruit Industries](https://www.adafruit.com/)**; follow the [description](https://learn.adafruit.com/node-embedded-development/installing-node-dot-js).
 
-
 To install *mdns* with *npm* on a Raspberry Pi you need to have installed also the avahi compatibility library.
 
 	sudo apt-get install libavahi-compat-libdnssd-dev
@@ -86,6 +86,12 @@ Now install the mqtt, mdns, mysql, and socket.io modules in your home directory 
 
 	cd ~
 	npm install mdns mqtt socket.io mysql
+
+or just do a
+
+    npm install
+    
+utilizing the provided [package.json](package.json) file.
 
 Be aware that these modules evolve; there was an issue with incompatible changes using socket.io: v0.9 behaves differently than v1.0 - so, even though I tested the stuff, it may not work with a next version of the used modules... Again, as this is free stuff, help yourself finding out what's up - there are zillions of possibilities, what has happened. (Have you used **git checkout**? Have you called **./configure**?)
 
