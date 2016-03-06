@@ -1,7 +1,7 @@
 /*
  * This is the combined script to serve a panel, chart and persistence service
  * for Fluksometer data processing.
- * (c) Markus Gebhard, Karlsruhe, 2014/2015
+ * (c) Markus Gebhard, Karlsruhe, 2014-2016
  *
  * In parts copyright (c) 2013, Fabian Affolter <fabian@affolter-engineering.ch>
  * Released under the MIT license. See LICENSE file for details.
@@ -28,17 +28,10 @@ var path = require("path");
 var sensors = {};
 
 // database access
-var mysql = require("mysql");
+var sqlite = require("sqlite3").verbose();
 
-// prepare the database access - use your db's values
-var dbaccess = {
-    host: "localhost",
-    user: "pi",
-    password: "raspberry",
-    database: "flm"
-};
-
-var database = mysql.createConnection(dbaccess);
+// prepare the database access
+var db = new sqlite.Database("./flm.db");
 
 prepare_database();
 
@@ -128,8 +121,11 @@ function handlequery(data) {
     }
     // fetch flm data from database
     var queryStr = "SELECT * FROM flmdata WHERE timestamp >= '" + fromTimestamp + "' AND timestamp <= '" + toTimestamp + "';";
-    var query = database.query(queryStr, function(err, rows, fields) {
-        if (err) throw err;
+    var query = db.all(queryStr, function(err, rows) {
+        if (err) {
+            db.close();
+            throw err;
+        }
         var series = {};
         for (var i in rows) {
             var sensorId = rows[i].sensor;
@@ -221,10 +217,10 @@ function handle_mqtt_service(address, port) {
                             id: cfg.id,
                             name: cfg.function
                         });
-                        var insertStr = "INSERT INTO flmconfig" + " (sensor, name)" + ' VALUES ("' + cfg.id + '",' + ' "' + cfg.function + '")' + " ON DUPLICATE KEY UPDATE" + " sensor = VALUES(sensor)," + " name = VALUES(name);";
-                        database.query(insertStr, function(err, res) {
+                        var insertStr = 'INSERT INTO flmconfig (sensor, name) VALUES ("' + cfg.id + '",' + ' "' + cfg.function + '");';
+                        db.run(insertStr, function(err) {
                             if (err) {
-                                database.end();
+                                db.close();
                                 throw err;
                             }
                         });
@@ -250,10 +246,10 @@ function handle_mqtt_service(address, port) {
 
               case 3:
                 // FLM gauges consist of timestamp, value, and unit
-                var insertStr = "INSERT INTO flmdata" + " (sensor, timestamp, value, unit)" + ' VALUES ("' + topicArray[2] + '",' + ' "' + payload[0] + '",' + ' "' + payload[1] + '",' + ' "' + payload[2] + '")' + " ON DUPLICATE KEY UPDATE" + " sensor = VALUES(sensor)," + " timestamp = VALUES(timestamp)," + " value = VALUES(value)," + " unit = VALUES(unit);";
-                database.query(insertStr, function(err, res) {
+                var insertStr = "INSERT INTO flmdata" + " (sensor, timestamp, value, unit)" + ' VALUES ("' + topicArray[2] + '",' + ' "' + payload[0] + '",' + ' "' + payload[1] + '",' + ' "' + payload[2] + '");';
+                db.run(insertStr, function(err, res) {
                     if (err) {
-                        database.end();
+                        db.close();
                         throw err;
                     }
                 });
@@ -272,27 +268,22 @@ function handle_mqtt_service(address, port) {
 
 // connect to database and check/create required tables
 function prepare_database() {
-    // connect to database
-    database.connect(function(err) {
-        if (err) throw err;
-        console.log("Database flm successfully connected");
-    });
     // define the config persistence if it does not exist
-    var createTabStr = "CREATE TABLE IF NOT EXISTS flmconfig" + "( sensor CHAR(32)," + "  name CHAR(32)," + "  UNIQUE KEY (sensor)" + ");";
+    var createTabStr = "CREATE TABLE IF NOT EXISTS flmconfig (sensor CHAR(32), name CHAR(32));";
     // and send the create command to the database
-    database.query(createTabStr, function(err, res) {
+    db.run(createTabStr, function(err) {
         if (err) {
-            database.end();
+            db.close();
             throw err;
         }
         console.log("Create/connect to config table successful...");
     });
     // define the data persistence if it does not exist
-    createTabStr = "CREATE TABLE IF NOT EXISTS flmdata" + "( sensor CHAR(32)," + "  timestamp CHAR(10)," + "  value CHAR(5)," + "  unit CHAR(5)," + "  UNIQUE KEY (sensor, timestamp)," + "  INDEX idx_time (timestamp)" + ");";
+    createTabStr = "CREATE TABLE IF NOT EXISTS flmdata (sensor CHAR(32), timestamp CHAR(10), value CHAR(5), unit CHAR(5));";
     // and send the create command to the database
-    database.query(createTabStr, function(err, res) {
+    db.run(createTabStr, function(err) {
         if (err) {
-            database.end();
+            db.close();
             throw err;
         }
         console.log("Create/connect to data table successful...");

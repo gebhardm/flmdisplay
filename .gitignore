@@ -13,4 +13,5 @@ default/
 node_modules/*
 persist/node_modules/*
 combined/node_modules/*
-
+# ignore database file
+*.db
