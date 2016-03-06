@@ -3,6 +3,8 @@
 *serve_flmdata.js* is a Javascript script running on **node.js** to receive and persist Fluksometer readings in a database and visualizing them in a panel and chart web service - so it needs [node.js](http://nodejs.org) installed...
 It connects to the FLM's MQTT broker on the discovered IP address(es) using the multicast DNS service discovery - so there is no further configuration to change beside the required setup steps described in the following.
 
+<img src="fluksopanel.png" width=500>
+
 # Setup
 
 To use the combined Fluksometer persistence and visualization script you have to perform some preparation steps. 
