@@ -1,7 +1,6 @@
 # ignore all OS specific files
 .DS_Store
-./nohup.out
-combined/nohup.out
+nohup.out
 Thumbs.db
 *.log
 # ignore AVR Studio specific files
@@ -15,3 +14,4 @@ persist/node_modules/*
 combined/node_modules/*
 # ignore database file
 *.db
+*.db-*

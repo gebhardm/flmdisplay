@@ -148,7 +148,11 @@ socket.on("connect", function() {
                     // add graph select option
                     $("#choices").append("<div class='checkbox'>" + "<small><label>" + "<input type='checkbox' id='" + sensor.name + "' checked='checked'></input>" + sensor.name + "</label></small>" + "</div>");
                 } else {
-                    if (obj[0].label == sensor.id) obj[0].label = sensor.name;
+                    // switch label from id to actual name (config came late)
+                    if (obj[0].label == sensor.id) {
+                        obj[0].label = sensor.name;
+                        $("#" + sensor.id).prop("id", sensor.name).val(sensor.name);
+                    }
                     obj[0].data.push([ timestamp, value[1] ]);
                     // move out values older than 5 minutes
                     var limit = parseInt(obj[0].data[0]);
