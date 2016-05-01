@@ -11,7 +11,12 @@ To use the combined Fluksometer persistence and visualization script you have to
 
 ## Foundation
 
-The following steps are based on a fresh installation of Raspbian/Debian on a [Raspberry Pi](http://www.raspberrypi.org/downloads). I chose the Jessie lite variant; it should also work with an equivalent, Debian-based PC installation.
+The following steps are based on a fresh installation of Raspbian/Debian on a [Raspberry Pi](http://www.raspberrypi.org/downloads). I chose the Jessie lite variant; it should also work with an equivalent, Debian-based PC installation or on a Macintosh. 
+In brief, for the Jessie lite variant you have to additionally install following packages:
+
+    sudo apt-get install libavahi-compat-libdnssd-dev git sqlite3 node
+    
+Note that for node(.js) you have to get the link to the corresponding Adafruit package first; see for more details in the following or jump to the [actual script install](#getting-the-script-and-starting-it) directly.
 
 ## Installing the database
 
