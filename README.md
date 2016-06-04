@@ -20,15 +20,25 @@ Note that for node(.js) you have to get the link to the corresponding Adafruit p
 
 ## Installing the database
 
-As the combined script stores Fluksometer data, a proper database must be installed; in my case it is SQlite. A previous use of MySQL quitted its cooperation.
+As the combined script stores Fluksometer data, a proper database must be installed; in my case it is SQlite. An alternative use of MySQL is also possible.
 
 	sudo apt-get install sqlite3
 
 This installs the database and all dependent packages. Everything else is done from the serving script.
 
+For MySQL install it by
+
+    sudo apt-get install mysql-server
+    
+and prepare the required database settings by executing the script
+
+    ./createdb.sh
+    
+As written, either use SQlite or MySQL. 
+
 ## Installing node.js
 
-To run the persistence and visualization script install [node.js](http://nodejs.org). For this you may take the sources from [http://github.com/nodejs/node](http://github.com/nodejs/node) and compile it on your Raspberry Pi. Use following command sequence - make sure to select the branch to your convenience
+To run the persistence and visualization script install [node.js](http://nodejs.org). For this you may take the sources from [http://github.com/nodejs/node](http://github.com/nodejs/node) and compile it on your Raspberry Pi. Use following command sequence - make sure to select/checkout the branch to your convenience
 
 	cd ~
 	git clone http://github.com/nodejs/node
@@ -41,7 +51,7 @@ This will take some while; to check what the make process is doing, use
 	
 	tail nohup.out
 	
-After finished `make` install node on your computer.
+After finished `make` install node.js on your computer.
 	
 	sudo make install
 
@@ -72,9 +82,9 @@ Now install the required mqtt, mdns, sqlite3, and socket.io modules by executing
 	cd flmdisplay
     npm install
     
-utilizing the provided [package.json](package.json) file.
+utilizing the provided [package.json](package.json) file. Note: For the MySQL variant install also `mysql`.
 
-Be aware that these modules evolve; there was an issue with incompatible changes using socket.io: v0.9 behaves differently than v1.0 - so, even though I tested the stuff, it may not work with a next version of the used modules... Again, as this is free stuff, help yourself finding out what's up - there are zillions of possibilities, what has happened. (Have you used **git checkout**? Have you called **./configure**?)
+Be aware that these modules evolve; for example, there was an issue with incompatible changes on socket.io v0.9 vs. v1.0 - so, even though I tested the stuff, it may not work with a next version of the used modules... Again, as this is free stuff, help yourself finding out what's up - there are zillions of possibilities what might have happened. (Have you used **git checkout**? Have you called **./configure**?)
 
 As *mdns* uses a compatibility layer, be aware that it throws warnings on use; follow the links within the warnings to get an understanding what has happened (and then ignore them). 
 
@@ -82,7 +92,7 @@ To start the combined persistence and visualization service, run the provided st
 
 	./flmdata.sh
 
-As an alternative you may also run it using `node serve_flmdata.js`.
+As an alternative you may also run it using `node serve_flmdata.js`. This applies also for the MySQL alternative; this needs to be started by `node serve_flmdata_mysql.js`.
 
 After start, the script checks if the corresponding database exists; if not, it creates the corresponding files and tables. Now the script discovers the existing Fluksometer MQTT broker(s) and subscribes to the respective sensor topics.
 
