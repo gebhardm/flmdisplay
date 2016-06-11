@@ -95,7 +95,16 @@ socket.on("connect", function() {
             }
             // set up the selection and the local storage of sensor flow direction
             if (sensor.type == null && sensor.unit === "W") {
-                $("#choices").append("<div class='form-inline'>" + "<label for='" + sensor.id + "' class='control-label col-sm-3'>" + sensor.name + "</label>" + "<select id='" + sensor.id + "'>" + "<option>Consumption</option>" + "<option>Production</option>" + "</select>" + "</div>");
+                $("#choices").append("<div class='form-inline'>" + 
+                                     "<label for='" + sensor.id + 
+                                     "' class='control-label col-sm-3'>" + sensor.name + 
+                                     "</label>" + 
+                                     "<select id='" + sensor.id + "'>" + 
+                                     "<option>Consumption</option>" + 
+                                     "<option>Production</option>" + 
+                                     "<option>Ignore</option>" +
+                                     "</select>" + 
+                                     "</div>");
                 // on change of flow direction store the respective value
                 $("#" + sensor.id).change(sensor, function(event) {
                     localStorage.setItem(event.data.id, event.target.value);
