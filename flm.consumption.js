@@ -96,7 +96,7 @@ socket.on("connect", function() {
             // set up the selection and the local storage of sensor flow direction
             if (sensor.type == null && sensor.unit === "W") {
                 $("#choices").append("<div class='form-inline'>" + 
-                                     "<label for='" + sensor.id + 
+                                     "<label id='" + sensor.id + "-label' for='" + sensor.id + 
                                      "' class='control-label col-sm-3'>" + sensor.name + 
                                      "</label>" + 
                                      "<select id='" + sensor.id + "'>" + 
@@ -116,6 +116,9 @@ socket.on("connect", function() {
                     $("#" + sensor.id).val(dirVal);
                 }
                 sensor.type = $("#" + sensor.id).val();
+            }
+            if ($('#' + sensor.id + '-label').text() !== sensor.name) { 
+                $('#' + sensor.id + '-label').text(sensor.name);
             }
             sensors[sensorId] = sensor;
             break;
