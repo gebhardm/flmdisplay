@@ -161,6 +161,9 @@ function handlequery(data) {
 
 // handle the detected mqtt service
 function handle_mqtt_service(address, port) {
+    // the currently processed (FLM) device id
+    var device;
+    // the respective MQTT connection
     mqttclient = mqtt.connect({
         port: port,
         host: address
@@ -170,6 +173,7 @@ function handle_mqtt_service(address, port) {
         console.log(now + " : Connected to " + address + ":" + port);
         // for the persistence subscription is needed:        
         mqttclient.subscribe("/device/+/config/sensor");
+        mqttclient.subscribe("/device/+/config/flx");
         mqttclient.subscribe("/sensor/+/gauge");
         mqttclient.subscribe("/sensor/+/counter");
     });
@@ -207,24 +211,27 @@ function handle_mqtt_service(address, port) {
     });
     // handle the device configuration
     function handle_device(topicArray, payload) {
+        device = topicArray[1];
         switch (topicArray[3]) {
           case "config":
             for (var obj in payload) {
                 var cfg = payload[obj];
                 if (cfg.enable == "1") {
-                    if (sensors[cfg.id] == null) {
-                        sensors[cfg.id] = new Object({
-                            id: cfg.id,
-                            name: cfg.function
-                        });
-                        var insertStr = 'INSERT INTO flmconfig (sensor, name) VALUES ("' + cfg.id + '",' + ' "' + cfg.function + '");';
-                        db.run(insertStr, function(err) {
-                            if (err) {
-                                db.close();
-                                throw err;
-                            }
-                        });
-                        console.log("Detected sensor " + cfg.id + " (" + cfg.function + ")");
+                    if (cfg.id != null) {
+                        if (sensors[cfg.id] == null) {
+                            sensors[cfg.id] = new Object({
+                                id: cfg.id,
+                                name: cfg.function
+                            });
+                            var insertStr = 'INSERT INTO flmconfig (sensor, name) VALUES ("' + cfg.id + '",' + ' "' + cfg.function + '");';
+                            db.run(insertStr, function(err) {
+                                if (err) {
+                                    db.close();
+                                    throw err;
+                                }
+                            });
+                            console.log("Detected sensor " + cfg.id + " (" + cfg.function + ")");
+                        }
                     }
                 }
             }
