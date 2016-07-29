@@ -24,6 +24,9 @@ var url = require("url");
 
 var path = require("path");
 
+// the socket listens on the http port
+var io = require("socket.io")(http);
+
 // store detected sensors
 var sensors = {};
 
@@ -37,8 +40,6 @@ prepare_database();
 
 // use mqtt for client, socket.io for push,
 var mqtt = require("mqtt");
-
-var mqttclient;
 
 // multicast DNS service discovery
 var mdns = require("mdns");
@@ -56,7 +57,7 @@ var mdnsbrowser = mdns.createBrowser(mdns.tcp("mqtt"), {
 // handle detected devices
 mdnsbrowser.on("serviceUp", function(service) {
     console.log("Detected MQTT service on: " + service.addresses[0] + ":" + service.port);
-    handle_mqtt_service(service.addresses[0], service.port);
+    mqttconnect(service.addresses[0], service.port);
 });
 
 // handle if mdns service goes offline
@@ -78,25 +79,6 @@ var ad = new mdns.Advertisement(mdns.tcp("http"), httpport, {
 });
 
 ad.start();
-
-// the socket listens on the http port
-var io = require("socket.io")(http);
-
-// handle socketio requests
-io.on("connection", function(socket) {
-    // handle database query request
-    socket.on("query", function(data) {
-        console.log("Socket received query request...");
-        handlequery(data);
-    });
-    // handle additional subscription request(s)
-    socket.on("subscribe", function(data) {
-        // console.log("Socket received subscribe:", data.topic);
-        if (mqttclient != null) {
-            mqttclient.subscribe(data.topic);
-        }
-    });
-});
 
 // define what shall be done on a io request
 function handlequery(data) {
@@ -160,14 +142,30 @@ function handlequery(data) {
 }
 
 // handle the detected mqtt service
-function handle_mqtt_service(address, port) {
+function mqttconnect(address, port) {
     // the currently processed (FLM) device id
-    var device;
+    var mqttclient, flx;
     // the respective MQTT connection
     mqttclient = mqtt.connect({
         port: port,
         host: address
     });
+	// handle socket.io requests
+io.on("connection", function(socket) {
+    // handle database query request
+    socket.on("query", function(data) {
+        console.log("Socket received query request...");
+        handlequery(data);
+    });
+    // handle additional subscription request(s)
+    socket.on("subscribe", function(data) {
+        // console.log("Socket received subscribe:", data.topic);
+        if (mqttclient != null) {
+            mqttclient.subscribe(data.topic);
+        }
+    });
+});
+// check mqtt messages
     mqttclient.on("connect", function() {
         var now = new Date();
         console.log(now + " : Connected to " + address + ":" + port);
@@ -211,9 +209,12 @@ function handle_mqtt_service(address, port) {
     });
     // handle the device configuration
     function handle_device(topicArray, payload) {
-        device = topicArray[1];
-        switch (topicArray[3]) {
-          case "config":
+		var deviceID = topic[2];
+        switch (topicArray[4]) {
+		  case "flx": 
+			flx = payload;
+			break;
+          case "sensor":
             for (var obj in payload) {
                 var cfg = payload[obj];
                 if (cfg.enable == "1") {
