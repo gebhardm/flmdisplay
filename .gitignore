@@ -13,5 +13,5 @@ node_modules/*
 persist/node_modules/*
 combined/node_modules/*
 # ignore database file
-flm.db
-flm.db-journal
+*.db
+*.db-journal
