@@ -1,21 +1,20 @@
-// link to the web server's IP address for socket connection
 var socket = io.connect(location.host);
 
 var infoVis = true;
 
 socket.on("connect", function() {
-    // emit the subscription
+    var flx;
     socket.emit("subscribe", {
         topic: "/device/+/config/sensor"
     });
     socket.emit("subscribe", {
+        topic: "/device/+/config/flx"
+    });
+    socket.emit("subscribe", {
         topic: "/sensor/+/gauge"
     });
-    // objects containing the actual sensor data
     var sensors = {};
-    // handle the received MQTT messages
     socket.on("mqtt", function(msg) {
-        // split the received message at the slashes
         var topic = msg.topic.split("/");
         var payload = msg.payload;
         switch (topic[1]) {
@@ -31,10 +30,10 @@ socket.on("connect", function() {
             break;
         }
     });
-    // handler for device configuration
     function handle_device(topic, payload) {
         var deviceID = topic[2];
-        if (topic[3] == "config") {
+        if (topic[4] == "flx") flx = JSON.parse(payload);
+        if (topic[4] == "sensor") {
             var config = JSON.parse(payload);
             for (var obj in config) {
                 var cfg = config[obj];
@@ -42,32 +41,35 @@ socket.on("connect", function() {
                     if (sensors[cfg.id] == null) {
                         sensors[cfg.id] = new Object();
                         sensors[cfg.id].id = cfg.id;
-                        sensors[cfg.id].name = cfg.function;
-                    } else sensors[cfg.id].name = cfg.function;
+                        if (cfg.function != undefined) {
+                            sensors[cfg.id].name = cfg.function;
+                        } else {
+                            sensors[cfg.id].name = cfg.id;
+                        }
+                        if (cfg.subtype != undefined) sensors[cfg.id].subtype = cfg.subtype;
+                        if (cfg.port != undefined) sensors[cfg.id].port = cfg.port[0];
+                    } else {
+                        if (cfg.function != undefined) sensors[cfg.id].name = cfg.function;
+                    }
                 }
             }
         }
     }
-    // handler for sensor readings
     function handle_sensor(topic, payload) {
         var sensor = {};
-        // the retrieved sensor information
         var msgType = topic[3];
-        // gauge or counter
         var sensorId = topic[2];
-        // the sensor ID
         var value = JSON.parse(payload);
-        // the transferred payload
-        // check if sensor was already retrieved
         if (sensors[sensorId] == null) {
             sensors[sensorId] = new Object();
             sensor.id = sensorId;
             sensor.name = sensorId;
         } else sensor = sensors[sensorId];
-        // now compute the received mqttMessage
+        if (sensor.name == sensorId && flx != undefined && sensor.port != undefined) {
+            sensor.name = flx[sensor.port].name + " " + sensor.subtype;
+        }
         switch (msgType) {
           case "gauge":
-            // handle the payload to obtain gauge values
             switch (value.length) {
               case 1:
                 break;
@@ -81,10 +83,8 @@ socket.on("connect", function() {
               case 3:
                 if (value[2] !== "W") break;
                 var date = new Date(value[0] * 1e3);
-                // the timestamp
                 var now = new Date().getTime();
                 if (now / 1e3 - value[0] > 60) value[1] = 0;
-                // if too old, set to 0
                 sensor.time = date;
                 sensor.value = value[1];
                 sensor.unit = value[2];
@@ -93,32 +93,20 @@ socket.on("connect", function() {
               default:
                 break;
             }
-            // set up the selection and the local storage of sensor flow direction
             if (sensor.type == null && sensor.unit === "W") {
-                $("#choices").append("<div class='form-inline'>" + 
-                                     "<label id='" + sensor.id + "-label' for='" + sensor.id + 
-                                     "' class='control-label col-sm-3'>" + sensor.name + 
-                                     "</label>" + 
-                                     "<select id='" + sensor.id + "'>" + 
-                                     "<option>Consumption</option>" + 
-                                     "<option>Production</option>" + 
-                                     "<option>Ignore</option>" +
-                                     "</select>" + 
-                                     "</div>");
-                // on change of flow direction store the respective value
+                $("#choices").append("<div class='form-inline'>" + "<label id='" + sensor.id + "-label' for='" + sensor.id + "' class='control-label col-sm-3'>" + sensor.name + "</label>" + "<select id='" + sensor.id + "'>" + "<option>Consumption</option>" + "<option>Production</option>" + "<option>Ignore</option>" + "</select>" + "</div>");
                 $("#" + sensor.id).change(sensor, function(event) {
                     localStorage.setItem(event.data.id, event.target.value);
                     sensors[event.data.id].type = event.target.value;
                 });
-                // retrieve a flow direction value that may be previously stored
                 var dirVal = localStorage.getItem(sensor.id);
                 if (dirVal !== null) {
                     $("#" + sensor.id).val(dirVal);
                 }
                 sensor.type = $("#" + sensor.id).val();
             }
-            if ($('#' + sensor.id + '-label').text() !== sensor.name) { 
-                $('#' + sensor.id + '-label').text(sensor.name);
+            if ($("#" + sensor.id + "-label").text() !== sensor.name) {
+                $("#" + sensor.id + "-label").text(sensor.name);
             }
             sensors[sensorId] = sensor;
             break;
@@ -128,18 +116,17 @@ socket.on("connect", function() {
         }
         handle_display(sensor);
     }
-    // compute the display refresh
     function handle_display(sensor) {
         var productionValue = 0;
         var consumptionValue = 0;
         for (var s in sensors) {
             switch (sensors[s].type) {
               case "Production":
-                productionValue += sensors[s].value;
+                productionValue += Math.round(sensors[s].value);
                 break;
 
               case "Consumption":
-                consumptionValue += sensors[s].value;
+                consumptionValue += Math.round(sensors[s].value);
                 break;
 
               default:
@@ -150,7 +137,6 @@ socket.on("connect", function() {
         var selfuseValue = productionValue > consumptionValue ? consumptionValue : productionValue;
         var supplyValue = productionValue > consumptionValue ? productionValue - consumptionValue : 0;
         var obtainedValue = consumptionValue - productionValue > 0 ? consumptionValue - productionValue : 0;
-        // write the values to the display
         $("#grid").html(gridValue + "W");
         $("#supply").html(supplyValue + "W");
         $("#production").html(productionValue + "W");
@@ -166,12 +152,10 @@ socket.on("connect", function() {
 });
 
 function display_resize() {
-    // compute the scaling
     var img = $("#image");
     var scale = img.width() / 1226;
     var pos = img.position();
     if (pos !== undefined) {
-        // format the output
         $(".watt").css("position", "absolute");
         $(".watt").css("width", 307 * scale + "px");
         $(".watt").css("text-align", "center");
@@ -210,13 +194,11 @@ $(document).ready(function() {
     $(window).resize(function() {
         display_resize();
     });
-    // toggle the configuration
     $("#toggle").click(function() {
         if (infoVis) $("#infopanel").hide(); else $("#infopanel").show();
         infoVis = !infoVis;
         localStorage.setItem("infoVis", infoVis);
     });
-    // size the display
     $("#image").on("load", function() {
         display_resize();
     });

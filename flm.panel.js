@@ -16,6 +16,9 @@ var sensors = {}, numGauges = 0;
 var socket = io.connect(location.host);
 
 socket.on("connect", function() {
+    // the FLM03 configuration
+    var flx;
+    // the processing of incoming mqtt messages
     socket.on("mqtt", function(msg) {
         // determine topic and payload
         var topic = msg.topic.split("/");
@@ -38,17 +41,25 @@ socket.on("connect", function() {
     // handle the device information
     function handle_device(topic, payload) {
         var deviceID = topic[2];
-        if (topic[3] == "config") {
+        if (topic[4] == "flx") flx = JSON.parse(payload);
+        if (topic[4] == "sensor") {
             var config = JSON.parse(payload);
             for (var obj in config) {
                 var cfg = config[obj];
                 if (cfg.enable == "1") {
-                    var sensorId = cfg.id;
-                    if (sensors[sensorId] == null) {
-                        sensors[sensorId] = new Object();
-                        sensors[sensorId].id = cfg.id;
-                        sensors[sensorId].name = cfg.function;
-                    } else sensors[sensorId].name = cfg.function;
+                    if (sensors[cfg.id] == null) {
+                        sensors[cfg.id] = new Object();
+                        sensors[cfg.id].id = cfg.id;
+                        if (cfg.function != undefined) {
+                            sensors[cfg.id].name = cfg.function;
+                        } else {
+                            sensors[cfg.id].name = cfg.id;
+                        }
+                        if (cfg.subtype != undefined) sensors[cfg.id].subtype = cfg.subtype;
+                        if (cfg.port != undefined) sensors[cfg.id].port = cfg.port[0];
+                    } else {
+                        if (cfg.function != undefined) sensors[cfg.id].name = cfg.function;
+                    }
                 }
             }
         }
@@ -63,6 +74,10 @@ socket.on("connect", function() {
             sensor.id = sensorId;
             sensor.name = sensorId;
         } else sensor = sensors[sensorId];
+        // reset the name, if possible
+        if (sensor.name == sensorId && flx != undefined && sensor.port != undefined) {
+            sensor.name = flx[sensor.port].name + " " + sensor.subtype;
+        }
         var value = JSON.parse(payload);
         // now compute the gauge
         switch (msgType) {
@@ -137,9 +152,12 @@ socket.on("connect", function() {
         topic: "/device/+/config/sensor"
     });
     socket.emit("subscribe", {
+        topic: "/device/+/config/flx"
+    });
+    socket.emit("subscribe", {
         topic: "/sensor/+/gauge"
     });
-	socket.emit("subscribe", {
+    socket.emit("subscribe", {
         topic: "/sensor/+/counter"
     });
 });

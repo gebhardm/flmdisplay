@@ -7,6 +7,7 @@ var infoVis = true;
 var socket = io.connect(location.host);
 
 socket.on("connect", function() {
+    var flx;
     socket.on("mqtt", function(msg) {
         // split the received message at the slashes
         var topic = msg.topic.split("/");
@@ -29,7 +30,8 @@ socket.on("connect", function() {
     // handle the received device information
     function handle_device(topic, payload) {
         var deviceID = topic[2];
-        if (topic[3] == "config") {
+        if (topic[4] == "flx") flx = JSON.parse(payload);
+        if (topic[4] == "sensor") {
             var config = JSON.parse(payload);
             for (var obj in config) {
                 var cfg = config[obj];
@@ -37,8 +39,16 @@ socket.on("connect", function() {
                     if (sensors[cfg.id] == null) {
                         sensors[cfg.id] = new Object();
                         sensors[cfg.id].id = cfg.id;
-                        sensors[cfg.id].name = cfg.function;
-                    } else sensors[cfg.id].name = cfg.function;
+                        if (cfg.function != undefined) {
+                            sensors[cfg.id].name = cfg.function;
+                        } else {
+                            sensors[cfg.id].name = cfg.id;
+                        }
+                        if (cfg.subtype != undefined) sensors[cfg.id].subtype = cfg.subtype;
+                        if (cfg.port != undefined) sensors[cfg.id].port = cfg.port[0];
+                    } else {
+                        if (cfg.function != undefined) sensors[cfg.id].name = cfg.function;
+                    }
                 }
             }
         }
@@ -58,6 +68,10 @@ socket.on("connect", function() {
             sensor.id = sensorId;
             sensor.name = sensorId;
         } else sensor = sensors[sensorId];
+        // reset the name, if possible
+        if (sensor.name == sensorId && flx != undefined && sensor.port != undefined) {
+            sensor.name = flx[sensor.port].name + " " + sensor.subtype;
+        }
         // now compute the gauge
         switch (msgType) {
           case "gauge":
@@ -135,6 +149,9 @@ socket.on("connect", function() {
     // emit the subscription
     socket.emit("subscribe", {
         topic: "/device/+/config/sensor"
+    });
+    socket.emit("subscribe", {
+        topic: "/device/+/config/flx"
     });
     socket.emit("subscribe", {
         topic: "/sensor/+/gauge"
