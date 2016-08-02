@@ -45,8 +45,6 @@ prepare_database();
 // use mqtt for client, socket.io for push,
 var mqtt = require("mqtt");
 
-var mqttclient;
-
 // multicast DNS service discovery
 var mdns = require("mdns");
 
@@ -63,7 +61,7 @@ var mdnsbrowser = mdns.createBrowser(mdns.tcp("mqtt"), {
 // handle detected devices
 mdnsbrowser.on("serviceUp", function(service) {
     console.log("Detected MQTT service on: " + service.addresses[0] + ":" + service.port);
-    handle_mqtt_service(service.addresses[0], service.port);
+    mqttconnect(service.addresses[0], service.port);
 });
 
 // handle if mdns service goes offline
@@ -88,22 +86,6 @@ ad.start();
 
 // the socket listens on the http port
 var io = require("socket.io")(http);
-
-// handle socketio requests
-io.on("connection", function(socket) {
-    // handle database query request
-    socket.on("query", function(data) {
-        console.log("Socket received query request...");
-        handlequery(data);
-    });
-    // handle additional subscription request(s)
-    socket.on("subscribe", function(data) {
-        // console.log("Socket received subscribe:", data.topic);
-        if (mqttclient != null) {
-            mqttclient.subscribe(data.topic);
-        }
-    });
-});
 
 // define what shall be done on a io request
 function handlequery(data) {
@@ -164,16 +146,32 @@ function handlequery(data) {
 }
 
 // handle the detected mqtt service
-function handle_mqtt_service(address, port) {
+function mqttconnect(address, port) {
+    var mqttclient, flx;
     mqttclient = mqtt.connect({
         port: port,
         host: address
     });
+    // handle socketio requests
+    io.on("connection", function(socket) {
+        // handle database query request
+        socket.on("query", function(data) {
+            console.log("Socket received query request...");
+            handlequery(data);
+        });
+        // handle additional subscription request(s)
+        socket.on("subscribe", function(data) {
+            // console.log("Socket received subscribe:", data.topic);
+            mqttclient.subscribe(data.topic);
+        });
+    });
+    // check mqtt messages
     mqttclient.on("connect", function() {
         var now = new Date();
         console.log(now + " : Connected to " + address + ":" + port);
         // for the persistence subscription is needed:        
         mqttclient.subscribe("/device/+/config/sensor");
+        mqttclient.subscribe("/device/+/config/flx");
         mqttclient.subscribe("/sensor/+/gauge");
         mqttclient.subscribe("/sensor/+/counter");
     });
@@ -211,25 +209,29 @@ function handle_mqtt_service(address, port) {
     });
     // handle the device configuration
     function handle_device(topicArray, payload) {
-        switch (topicArray[3]) {
-          case "config":
+        switch (topicArray[4]) {
+          case "flx":
+            flx = payload;
+            break;
+
+          case "sensor":
             for (var obj in payload) {
                 var cfg = payload[obj];
                 if (cfg.enable == "1") {
                     if (sensors[cfg.id] == null) {
-                        sensors[cfg.id] = new Object({
-                            id: cfg.id,
-                            name: cfg.function
-                        });
-                        var insertStr = "INSERT INTO flmconfig" + " (sensor, name)" + ' VALUES ("' + cfg.id + '",' + ' "' + cfg.function + '")' + " ON DUPLICATE KEY UPDATE" + " sensor = VALUES(sensor)," + " name = VALUES(name);";
-                        database.query(insertStr, function(err, res) {
-                            if (err) {
-                                database.end();
-                                throw err;
-                            }
-                        });
-                        console.log("Detected sensor " + cfg.id + " (" + cfg.function + ")");
+                        sensors[cfg.id] = new Object();
+                        sensors[cfg.id].id = cfg.id;
+                        if (cfg.function != undefined) {
+                            sensors[cfg.id].name = cfg.function;
+                        } else {
+                            sensors[cfg.id].name = cfg.id;
+                        }
+                        if (cfg.subtype != undefined) sensors[cfg.id].subtype = cfg.subtype;
+                        if (cfg.port != undefined) sensors[cfg.id].port = cfg.port[0];
+                    } else {
+                        if (cfg.function != undefined) sensors[cfg.id].name = cfg.function;
                     }
+                    console.log("Detected sensor " + sensors[cfg.id].id + " (" + sensors[cfg.id].name + ")");
                 }
             }
             break;
@@ -240,7 +242,23 @@ function handle_mqtt_service(address, port) {
     }
     // handle the sensor readings
     function handle_sensor(topicArray, payload) {
-        switch (topicArray[3]) {
+        // the retrieved sensor information
+        var sensor = {};
+        // the message type is the third value
+        var msgType = topicArray[3];
+        // the sensor ID
+        var sensorId = topicArray[2];
+        if (sensors[sensorId] == null) {
+            sensors[sensorId] = new Object();
+            sensor.id = sensorId;
+            sensor.name = sensorId;
+        } else sensor = sensors[sensorId];
+        // reset the name, if possible
+        if (sensor.name == sensorId && flx != undefined && sensor.port != undefined) {
+            sensor.name = flx[sensor.port].name + " " + sensor.subtype;
+        }
+        sensors[sensorId] = sensor;
+        switch (msgType) {
           case "gauge":
             switch (payload.length) {
               case 2:
