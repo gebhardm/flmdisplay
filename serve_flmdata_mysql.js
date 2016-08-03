@@ -87,64 +87,6 @@ ad.start();
 // the socket listens on the http port
 var io = require("socket.io")(http);
 
-// define what shall be done on a io request
-function handlequery(data) {
-    // send message that data load it started...
-    io.sockets.emit("info", "<center>Loading...</center>");
-    // get time interval to query
-    var fromTimestamp = data.fromTimestamp;
-    var toTimestamp = data.toTimestamp;
-    // log the query request
-    console.log("Handling query from " + fromTimestamp + " to " + toTimestamp);
-    // check delivered interval
-    if (toTimestamp < fromTimestamp) {
-        var temp = fromTimestamp;
-        fromTimestamp = toTimestamp;
-        toTimestamp = temp;
-    }
-    var timeLen = toTimestamp - fromTimestamp;
-    // check if interval is small enough to query
-    if (timeLen > 12 * 60 * 60) {
-        io.sockets.emit("info", "<center><strong>Time interval too large to query...</strong></center>");
-        return;
-    }
-    // fetch flm data from database
-    var queryStr = "SELECT * FROM flmdata WHERE timestamp >= '" + fromTimestamp + "' AND timestamp <= '" + toTimestamp + "';";
-    var query = database.query(queryStr, function(err, rows, fields) {
-        if (err) throw err;
-        var series = {};
-        for (var i in rows) {
-            var sensorId = rows[i].sensor;
-            if (sensors[sensorId] != null) sensorId = sensors[sensorId].name;
-            if (series[sensorId] == null) series[sensorId] = new Array();
-            series[sensorId].push([ rows[i].timestamp * 1e3, rows[i].value ]);
-        }
-        // reduce the time series length through averages
-        if (timeLen > 2 * 60 * 60) {
-            for (var s in series) {
-                var n = 0, avg = 0;
-                var ser = new Array();
-                for (var v in series[s]) {
-                    // series[s][v] delivers the single series [timestamp,value]
-                    n++;
-                    avg += parseInt(series[s][v][1]);
-                    tim = new Date(series[s][v][0]);
-                    if (tim.getSeconds() == 0) {
-                        avg = Math.round(avg / n);
-                        ser.push([ series[s][v][0], avg ]);
-                        avg = 0;
-                        n = 0;
-                    }
-                }
-                series[s] = ser;
-            }
-        }
-        // send data to requester
-        io.sockets.emit("series", series);
-        console.log("Queried series transmitted...");
-    });
-}
-
 // handle the detected mqtt service
 function mqttconnect(address, port) {
     var mqttclient, flx;
@@ -154,11 +96,6 @@ function mqttconnect(address, port) {
     });
     // handle socketio requests
     io.on("connection", function(socket) {
-        // handle database query request
-        socket.on("query", function(data) {
-            console.log("Socket received query request...");
-            handlequery(data);
-        });
         // handle additional subscription request(s)
         socket.on("subscribe", function(data) {
             // console.log("Socket received subscribe:", data.topic);
@@ -191,11 +128,11 @@ function mqttconnect(address, port) {
         }
         switch (topicArray[1]) {
           case "device":
-            handle_device(topicArray, payload);
+            handle_device(flx, topicArray, payload);
             break;
 
           case "sensor":
-            handle_sensor(topicArray, payload);
+            handle_sensor(flx, topicArray, payload);
             break;
 
           default:
@@ -207,84 +144,93 @@ function mqttconnect(address, port) {
             payload: JSON.stringify(payload)
         });
     });
-    // handle the device configuration
-    function handle_device(topicArray, payload) {
-        switch (topicArray[4]) {
-          case "flx":
-            flx = payload;
-            break;
+}
 
-          case "sensor":
-            for (var obj in payload) {
-                var cfg = payload[obj];
-                if (cfg.enable == "1") {
-                    if (sensors[cfg.id] == null) {
-                        sensors[cfg.id] = new Object();
-                        sensors[cfg.id].id = cfg.id;
-                        if (cfg.function != undefined) {
-                            sensors[cfg.id].name = cfg.function;
-                        } else {
-                            sensors[cfg.id].name = cfg.id;
-                        }
-                        if (cfg.subtype != undefined) sensors[cfg.id].subtype = cfg.subtype;
-                        if (cfg.port != undefined) sensors[cfg.id].port = cfg.port[0];
+// handle the device configuration
+function handle_device(flx, topicArray, payload) {
+    switch (topicArray[4]) {
+      case "flx":
+        flx = payload;
+        break;
+
+      case "sensor":
+        for (var obj in payload) {
+            var cfg = payload[obj];
+            if (cfg.enable == "1") {
+                if (sensors[cfg.id] == null) {
+                    sensors[cfg.id] = new Object();
+                    sensors[cfg.id].id = cfg.id;
+                    if (cfg.function != undefined) {
+                        sensors[cfg.id].name = cfg.function;
                     } else {
-                        if (cfg.function != undefined) sensors[cfg.id].name = cfg.function;
+                        sensors[cfg.id].name = cfg.id;
                     }
-                    console.log("Detected sensor " + sensors[cfg.id].id + " (" + sensors[cfg.id].name + ")");
+                    if (cfg.subtype != undefined) sensors[cfg.id].subtype = cfg.subtype;
+                    if (cfg.port != undefined) sensors[cfg.id].port = cfg.port[0];
+                } else {
+                    if (cfg.function != undefined) sensors[cfg.id].name = cfg.function;
                 }
+                console.log("Detected sensor " + sensors[cfg.id].id + " (" + sensors[cfg.id].name + ")");
             }
-            break;
-
-          default:
-            break;
         }
+        break;
+
+      default:
+        break;
     }
-    // handle the sensor readings
-    function handle_sensor(topicArray, payload) {
-        // the retrieved sensor information
-        var sensor = {};
-        // the message type is the third value
-        var msgType = topicArray[3];
-        // the sensor ID
-        var sensorId = topicArray[2];
-        if (sensors[sensorId] == null) {
-            sensors[sensorId] = new Object();
-            sensor.id = sensorId;
-            sensor.name = sensorId;
-        } else sensor = sensors[sensorId];
-        // reset the name, if possible
-        if (sensor.name == sensorId && flx != undefined && sensor.port != undefined) {
-            sensor.name = flx[sensor.port].name + " " + sensor.subtype;
-        }
-        sensors[sensorId] = sensor;
-        switch (msgType) {
-          case "gauge":
-            switch (payload.length) {
-              case 2:
-                var now = parseInt(new Date().getTime() / 1e3);
-                payload.unshift(now);
-                break;
+}
 
-              case 3:
-                // FLM gauges consist of timestamp, value, and unit
-                var insertStr = "INSERT INTO flmdata" + " (sensor, timestamp, value, unit)" + ' VALUES ("' + topicArray[2] + '",' + ' "' + payload[0] + '",' + ' "' + payload[1] + '",' + ' "' + payload[2] + '")' + " ON DUPLICATE KEY UPDATE" + " sensor = VALUES(sensor)," + " timestamp = VALUES(timestamp)," + " value = VALUES(value)," + " unit = VALUES(unit);";
+// handle the sensor readings
+function handle_sensor(flx, topicArray, payload) {
+    // the retrieved sensor information
+    var sensor = {};
+    var id, timestamp, value, unit;
+    // the message type is the third value
+    var msgType = topicArray[3];
+    // the sensor ID
+    var sensorId = topicArray[2];
+    if (sensors[sensorId] == null) {
+        sensors[sensorId] = new Object();
+        sensor.id = sensorId;
+        sensor.name = sensorId;
+    } else sensor = sensors[sensorId];
+    // reset the name, if possible
+    if (sensor.name == sensorId && flx != undefined && sensor.port != undefined) {
+        sensor.name = flx[sensor.port].name + " " + sensor.subtype;
+    }
+    sensors[sensorId] = sensor;
+    switch (msgType) {
+      case "gauge":
+        switch (payload.length) {
+          case 2:
+            var now = parseInt(new Date().getTime() / 1e3);
+            payload.unshift(now);
+            break;
+
+          case 3:
+            id = topicArray[2];
+            timestamp = payload[0];
+            value = Math.round(payload[1]);
+            unit = payload[2];
+            // FLM gauges consist of timestamp, value, and unit
+            if (unit === "W") {
+                var insertStr = "INSERT INTO flmdata" + " (sensor, timestamp, value, unit)" + ' VALUES ("' + id + '",' + ' "' + timestamp + '",' + ' "' + value + '",' + ' "' + unit + '")' + " ON DUPLICATE KEY UPDATE" + " sensor = VALUES(sensor)," + " timestamp = VALUES(timestamp)," + " value = VALUES(value)," + " unit = VALUES(unit);";
                 database.query(insertStr, function(err, res) {
                     if (err) {
                         database.end();
                         throw err;
                     }
                 });
-                break;
-
-              default:
-                break;
             }
             break;
 
           default:
             break;
         }
+        break;
+
+      default:
+        break;
     }
 }
 
@@ -354,3 +300,69 @@ function httphandler(req, res) {
         });
     });
 }
+
+// define what shall be done on a io request
+function handlequery(data) {
+    // send message that data load it started...
+    io.sockets.emit("info", "<center>Loading...</center>");
+    // get time interval to query
+    var fromTimestamp = data.fromTimestamp;
+    var toTimestamp = data.toTimestamp;
+    // log the query request
+    console.log("Handling query from " + fromTimestamp + " to " + toTimestamp);
+    // check delivered interval
+    if (toTimestamp < fromTimestamp) {
+        var temp = fromTimestamp;
+        fromTimestamp = toTimestamp;
+        toTimestamp = temp;
+    }
+    var timeLen = toTimestamp - fromTimestamp;
+    // check if interval is small enough to query
+    if (timeLen > 12 * 60 * 60) {
+        io.sockets.emit("info", "<center><strong>Time interval too large to query...</strong></center>");
+        return;
+    }
+    // fetch flm data from database
+    var queryStr = "SELECT * FROM flmdata WHERE timestamp >= '" + fromTimestamp + "' AND timestamp <= '" + toTimestamp + "';";
+    var query = database.query(queryStr, function(err, rows, fields) {
+        if (err) throw err;
+        var series = {};
+        for (var i in rows) {
+            var sensorId = rows[i].sensor;
+            if (sensors[sensorId] != null) sensorId = sensors[sensorId].name;
+            if (series[sensorId] == null) series[sensorId] = new Array();
+            series[sensorId].push([ rows[i].timestamp * 1e3, rows[i].value ]);
+        }
+        // reduce the time series length through averages
+        if (timeLen > 2 * 60 * 60) {
+            for (var s in series) {
+                var n = 0, avg = 0;
+                var ser = new Array();
+                for (var v in series[s]) {
+                    // series[s][v] delivers the single series [timestamp,value]
+                    n++;
+                    avg += parseInt(series[s][v][1]);
+                    tim = new Date(series[s][v][0]);
+                    if (tim.getSeconds() == 0) {
+                        avg = Math.round(avg / n);
+                        ser.push([ series[s][v][0], avg ]);
+                        avg = 0;
+                        n = 0;
+                    }
+                }
+                series[s] = ser;
+            }
+        }
+        // send data to requester
+        io.sockets.emit("series", series);
+        console.log("Queried series transmitted...");
+    });
+}
+
+io.on("connection", function(socket) {
+    // handle database query request
+    socket.on("query", function(data) {
+        console.log("Socket received query request...");
+        handlequery(data);
+    });
+});
