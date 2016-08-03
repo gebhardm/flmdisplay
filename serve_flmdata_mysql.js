@@ -1,7 +1,7 @@
 /*
  * This is the combined script to serve a panel, chart and persistence service
  * for Fluksometer data processing.
- * (c) Markus Gebhard, Karlsruhe, 2014/2015
+ * (c) Markus Gebhard, Karlsruhe, 2014-2016
  *
  * In parts copyright (c) 2013, Fabian Affolter <fabian@affolter-engineering.ch>
  * Released under the MIT license. See LICENSE file for details.
@@ -128,7 +128,7 @@ function mqttconnect(address, port) {
         }
         switch (topicArray[1]) {
           case "device":
-            handle_device(flx, topicArray, payload);
+            handle_device(topicArray, payload);
             break;
 
           case "sensor":
@@ -144,39 +144,38 @@ function mqttconnect(address, port) {
             payload: JSON.stringify(payload)
         });
     });
-}
+    // handle the device configuration
+    function handle_device(topicArray, payload) {
+        switch (topicArray[4]) {
+          case "flx":
+            flx = payload;
+            break;
 
-// handle the device configuration
-function handle_device(flx, topicArray, payload) {
-    switch (topicArray[4]) {
-      case "flx":
-        flx = payload;
-        break;
-
-      case "sensor":
-        for (var obj in payload) {
-            var cfg = payload[obj];
-            if (cfg.enable == "1") {
-                if (sensors[cfg.id] == null) {
-                    sensors[cfg.id] = new Object();
-                    sensors[cfg.id].id = cfg.id;
-                    if (cfg.function != undefined) {
-                        sensors[cfg.id].name = cfg.function;
+          case "sensor":
+            for (var obj in payload) {
+                var cfg = payload[obj];
+                if (cfg.enable == "1") {
+                    if (sensors[cfg.id] == null) {
+                        sensors[cfg.id] = new Object();
+                        sensors[cfg.id].id = cfg.id;
+                        if (cfg.function != undefined) {
+                            sensors[cfg.id].name = cfg.function;
+                        } else {
+                            sensors[cfg.id].name = cfg.id;
+                        }
+                        if (cfg.subtype != undefined) sensors[cfg.id].subtype = cfg.subtype;
+                        if (cfg.port != undefined) sensors[cfg.id].port = cfg.port[0];
                     } else {
-                        sensors[cfg.id].name = cfg.id;
+                        if (cfg.function != undefined) sensors[cfg.id].name = cfg.function;
                     }
-                    if (cfg.subtype != undefined) sensors[cfg.id].subtype = cfg.subtype;
-                    if (cfg.port != undefined) sensors[cfg.id].port = cfg.port[0];
-                } else {
-                    if (cfg.function != undefined) sensors[cfg.id].name = cfg.function;
+                    console.log("Detected sensor " + sensors[cfg.id].id + " (" + sensors[cfg.id].name + ")");
                 }
-                console.log("Detected sensor " + sensors[cfg.id].id + " (" + sensors[cfg.id].name + ")");
             }
-        }
-        break;
+            break;
 
-      default:
-        break;
+          default:
+            break;
+        }
     }
 }
 

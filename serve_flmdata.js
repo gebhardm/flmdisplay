@@ -141,6 +141,15 @@ function handlequery(data) {
     });
 }
 
+// direct a query request
+io.on("connection", function(socket) {
+    // handle database query request
+    socket.on("query", function(data) {
+        console.log("Socket received query request...");
+        handlequery(data);
+    });
+});
+
 // handle the detected mqtt service
 function mqttconnect(address, port) {
     // the currently processed (FLM) device id
@@ -152,11 +161,6 @@ function mqttconnect(address, port) {
     });
     // handle socket.io requests
     io.on("connection", function(socket) {
-        // handle database query request
-        socket.on("query", function(data) {
-            console.log("Socket received query request...");
-            handlequery(data);
-        });
         // handle additional subscription request(s)
         socket.on("subscribe", function(data) {
             // console.log("Socket received subscribe:", data.topic);
