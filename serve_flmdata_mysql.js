@@ -167,6 +167,14 @@ function mqttconnect(address, port) {
                         if (cfg.port != undefined) sensors[cfg.id].port = cfg.port[0];
                     } else {
                         if (cfg.function != undefined) sensors[cfg.id].name = cfg.function;
+                        var insertStr = 'INSERT INTO flmconfig (sensor, name) VALUES ("' + cfg.id + '", "' + cfg.function + '") ON DUPLICATE KEY UPDATE name = "' + cfg.function + '";';
+                        //console.log(insertStr);
+                        database.query(insertStr, function(err, res) {
+                            if (err) {
+                                database.end();
+                                throw err;
+                            }
+                        });
                     }
                     console.log("Detected sensor " + sensors[cfg.id].id + " (" + sensors[cfg.id].name + ")");
                 }
@@ -196,6 +204,14 @@ function handle_sensor(flx, topicArray, payload) {
     // reset the name, if possible
     if (sensor.name == sensorId && flx != undefined && sensor.port != undefined) {
         sensor.name = flx[sensor.port].name + " " + sensor.subtype;
+        var insertStr = 'INSERT INTO flmconfig (sensor, name) VALUES ("' + sensor.id + '", "' + sensor.name + '") ON DUPLICATE KEY UPDATE name = "' + sensor.name + '";';
+        //console.log(insertStr);
+        database.query(insertStr, function(err, res) {
+            if (err) {
+                database.end();
+                throw err;
+            }
+        });
     }
     sensors[sensorId] = sensor;
     switch (msgType) {
