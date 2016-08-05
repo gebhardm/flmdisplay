@@ -138,65 +138,64 @@ function handle_sensor(flx, topic, payload) {
         sensor.name = flx[sensor.port].name + " " + sensor.subtype;
     }
     var value = JSON.parse(payload);
+    if (value.length != 3) return;
+    if (value[2] !== "W") return;
     // now compute the gauge
     switch (msgType) {
       case "gauge":
         // process currently only the FLM delivered values with timestamp
-        if (value.length == 3 && value[2] === "W") {
-            // check time difference of received value to current time
-            // this is due to pulses being send on occurance, so potentially outdated
-            var now = new Date().getTime();
-            var diff = now / 1e3 - value[0];
-            // drop values that are older than 10 sec - as this is a realtime view
-            if (diff > 100) break;
-            // check if current sensor was already registered
-            var obj = series.filter(function(o) {
-                return o.label == sensor.name;
+        // check time difference of received value to current time
+        // this is due to pulses being send on occurance, so potentially outdated
+        var now = new Date().getTime();
+        var diff = now / 1e3 - value[0];
+        // drop values that are older than 10 sec - as this is a realtime view
+        if (diff > 100) break;
+        // check if current sensor was already registered
+        var obj = series.filter(function(o) {
+            return o.label == sensor.name;
+        });
+        if (obj[0] == null) {
+            obj = series.filter(function(o) {
+                return o.label == sensor.id;
             });
-            if (obj[0] == null) {
-                obj = series.filter(function(o) {
-                    return o.label == sensor.id;
-                });
+        }
+        // flot.time requires UTC-like timestamps;
+        // see https://github.com/flot/flot/blob/master/API.md#time-series-data
+        var timestamp = value[0] * 1e3;
+        // ...if current sensor does not exist yet, register it
+        if (obj[0] == null) {
+            obj = {};
+            obj.label = sensor.name;
+            obj.data = [ timestamp, value[1] ];
+            obj.color = color;
+            color++;
+            series.push(obj);
+            // add graph select option
+            $("#choices").append("<div class='checkbox'>" + "<small><label>" + "<input type='checkbox' id='" + sensor.name + "' checked='checked'></input>" + sensor.name + "</label></small>" + "</div>");
+        } else {
+            // switch label from id to actual name (config came late)
+            if (obj[0].label == sensor.id) {
+                obj[0].label = sensor.name;
+                $("#" + sensor.id).prop("id", sensor.name).parent().get(0).val(sensor.name);
             }
-            // flot.time requires UTC-like timestamps;
-            // see https://github.com/flot/flot/blob/master/API.md#time-series-data
-            var timestamp = value[0] * 1e3;
-            // ...if current sensor does not exist yet, register it
-            if (obj[0] == null) {
-                obj = {};
-                obj.label = sensor.name;
-                obj.data = [ timestamp, value[1] ];
-                obj.color = color;
-                color++;
-                series.push(obj);
-                // add graph select option
-                $("#choices").append("<div class='checkbox'>" + "<small><label>" + "<input type='checkbox' id='" + sensor.name + "' checked='checked'></input>" + sensor.name + "</label></small>" + "</div>");
-            } else {
-                // switch label from id to actual name (config came late)
-                if (obj[0].label == sensor.id) {
-                    obj[0].label = sensor.name;
-                    $("#" + sensor.id).prop("id", sensor.name).parent().get(0).val(sensor.name);
+            obj[0].data.push([ timestamp, value[1] ]);
+            // move out values older than 5 minutes
+            var limit = parseInt(obj[0].data[0]);
+            diff = (timestamp - limit) / 1e3;
+            if (diff > 300) {
+                var selGraph = new Array();
+                for (var i in series) {
+                    var selObj = {};
+                    selObj.label = series[i].label;
+                    selObj.data = series[i].data.filter(function(v) {
+                        return v[0] > limit;
+                    });
+                    selObj.color = series[i].color;
+                    selGraph.push(selObj);
                 }
-                obj[0].data.push([ timestamp, value[1] ]);
-                // move out values older than 5 minutes
-                var limit = parseInt(obj[0].data[0]);
-                diff = (timestamp - limit) / 1e3;
-                if (diff > 300) {
-                    var selGraph = new Array();
-                    for (var i in series) {
-                        var selObj = {};
-                        selObj.label = series[i].label;
-                        selObj.data = series[i].data.filter(function(v) {
-                            return v[0] > limit;
-                        });
-                        selObj.color = series[i].color;
-                        selGraph.push(selObj);
-                    }
-                    series = selGraph;
-                }
+                series = selGraph;
             }
         }
-        // if length
         break;
 
       default:
