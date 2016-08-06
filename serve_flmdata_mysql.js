@@ -110,7 +110,6 @@ function mqttconnect(address, port) {
         mqttclient.subscribe("/device/+/config/sensor");
         mqttclient.subscribe("/device/+/config/flx");
         mqttclient.subscribe("/sensor/+/gauge");
-        mqttclient.subscribe("/sensor/+/counter");
     });
     mqttclient.on("error", function() {
         // error handling to be a bit more sophisticated...
@@ -166,15 +165,17 @@ function mqttconnect(address, port) {
                         if (cfg.subtype != undefined) sensors[cfg.id].subtype = cfg.subtype;
                         if (cfg.port != undefined) sensors[cfg.id].port = cfg.port[0];
                     } else {
-                        if (cfg.function != undefined) sensors[cfg.id].name = cfg.function;
-                        var insertStr = 'INSERT INTO flmconfig (sensor, name) VALUES ("' + cfg.id + '", "' + cfg.function + '") ON DUPLICATE KEY UPDATE name = "' + cfg.function + '";';
-                        //console.log(insertStr);
-                        database.query(insertStr, function(err, res) {
-                            if (err) {
-                                database.end();
-                                throw err;
-                            }
-                        });
+                        if (cfg.function != undefined) {
+                            sensors[cfg.id].name = cfg.function;
+                            var insertStr = 'INSERT INTO flmconfig (sensor, name) VALUES ("' + cfg.id + '", "' + cfg.function + '") ON DUPLICATE KEY UPDATE name = "' + cfg.function + '";';
+                            //console.log(insertStr);
+                            database.query(insertStr, function(err, res) {
+                                if (err) {
+                                    database.end();
+                                    throw err;
+                                }
+                            });
+                        }
                     }
                     console.log("Detected sensor " + sensors[cfg.id].id + " (" + sensors[cfg.id].name + ")");
                 }

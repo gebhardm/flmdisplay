@@ -175,7 +175,6 @@ function mqttconnect(address, port) {
         mqttclient.subscribe("/device/+/config/sensor");
         mqttclient.subscribe("/device/+/config/flx");
         mqttclient.subscribe("/sensor/+/gauge");
-        mqttclient.subscribe("/sensor/+/counter");
     });
     mqttclient.on("error", function() {
         // error handling to be a bit more sophisticated...
@@ -197,7 +196,7 @@ function mqttconnect(address, port) {
             break;
 
           case "sensor":
-            handle_sensor(topicArray, payload);
+            handle_sensor(flx, topicArray, payload);
             break;
 
           default:
@@ -232,7 +231,9 @@ function mqttconnect(address, port) {
                         if (cfg.subtype != undefined) sensors[cfg.id].subtype = cfg.subtype;
                         if (cfg.port != undefined) sensors[cfg.id].port = cfg.port[0];
                     } else {
-                        if (cfg.function != undefined) sensors[cfg.id].name = cfg.function;
+                        if (cfg.function != undefined) {
+                            sensors[cfg.id].name = cfg.function;
+                        }
                     }
                     console.log("Detected sensor " + sensors[cfg.id].id + " (" + sensors[cfg.id].name + ")");
                 }
@@ -243,34 +244,37 @@ function mqttconnect(address, port) {
             break;
         }
     }
-    // handle the sensor readings
-    function handle_sensor(topicArray, payload) {
-        // the retrieved sensor information
-        var sensor = {};
-        // the message type is the third value
-        var msgType = topicArray[3];
-        // the sensor ID
-        var sensorId = topicArray[2];
-        if (sensors[sensorId] == null) {
-            sensors[sensorId] = new Object();
-            sensor.id = sensorId;
-            sensor.name = sensorId;
-        } else sensor = sensors[sensorId];
-        // reset the name, if possible
-        if (sensor.name == sensorId && flx != undefined && sensor.port != undefined) {
-            sensor.name = flx[sensor.port].name + " " + sensor.subtype;
-        }
-        sensors[sensorId] = sensor;
-        switch (msgType) {
-          case "gauge":
-            switch (payload.length) {
-              case 2:
-                var now = parseInt(new Date().getTime() / 1e3);
-                payload.unshift(now);
-                break;
+}
 
-              case 3:
-                // FLM gauges consist of timestamp, value, and unit
+// handle the sensor readings
+function handle_sensor(flx, topicArray, payload) {
+    // the retrieved sensor information
+    var sensor = {};
+    // the message type is the third value
+    var msgType = topicArray[3];
+    // the sensor ID
+    var sensorId = topicArray[2];
+    if (sensors[sensorId] == null) {
+        sensors[sensorId] = new Object();
+        sensor.id = sensorId;
+        sensor.name = sensorId;
+    } else sensor = sensors[sensorId];
+    // reset the name, if possible
+    if (sensor.name == sensorId && flx != undefined && sensor.port != undefined) {
+        sensor.name = flx[sensor.port].name + " " + sensor.subtype;
+    }
+    sensors[sensorId] = sensor;
+    switch (msgType) {
+      case "gauge":
+        switch (payload.length) {
+          case 2:
+            var now = parseInt(new Date().getTime() / 1e3);
+            payload.unshift(now);
+            break;
+
+          case 3:
+            // FLM gauges consist of timestamp, value, and unit
+            if (payload[2] === "W") {
                 var insertStr = "INSERT INTO flmdata" + " (sensor, timestamp, value, unit)" + ' VALUES ("' + topicArray[2] + '",' + ' "' + payload[0] + '",' + ' "' + payload[1] + '",' + ' "' + payload[2] + '");';
                 db.run(insertStr, function(err, res) {
                     if (err) {
@@ -278,22 +282,23 @@ function mqttconnect(address, port) {
                         throw err;
                     }
                 });
-                break;
-
-              default:
-                break;
             }
             break;
 
           default:
             break;
         }
+        break;
+
+      default:
+        break;
     }
 }
 
 // connect to database and check/create required tables
 function prepare_database() {
     // define the config persistence if it does not exist
+    /*
     var createTabStr = "CREATE TABLE IF NOT EXISTS flmconfig (sensor CHAR(32), name CHAR(32));";
     // and send the create command to the database
     db.run(createTabStr, function(err) {
@@ -303,6 +308,7 @@ function prepare_database() {
         }
         console.log("Create/connect to config table successful...");
     });
+*/
     // define the data persistence if it does not exist
     createTabStr = "CREATE TABLE IF NOT EXISTS flmdata (sensor CHAR(32), timestamp CHAR(10), value CHAR(5), unit CHAR(5));";
     // and send the create command to the database
