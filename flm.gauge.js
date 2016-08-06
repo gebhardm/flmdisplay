@@ -7,18 +7,14 @@ var infoVis = true;
 var socket = io.connect(location.host);
 
 socket.on("connect", function() {
-    var flx;
     socket.on("mqtt", function(msg) {
+        var name = msg.name;
         // split the received message at the slashes
         var topic = msg.topic.split("/");
         var payload = msg.payload;
         switch (topic[1]) {
-          case "device":
-            handle_device(topic, payload);
-            break;
-
           case "sensor":
-            handle_sensor(topic, payload);
+            handle_sensor(name, topic, payload);
             // pass the message topic and content to the html part
             $("#message").html(msg.topic + ", " + msg.payload);
             break;
@@ -27,34 +23,8 @@ socket.on("connect", function() {
             break;
         }
     });
-    // handle the received device information
-    function handle_device(topic, payload) {
-        var deviceID = topic[2];
-        if (topic[4] == "flx") flx = JSON.parse(payload);
-        if (topic[4] == "sensor") {
-            var config = JSON.parse(payload);
-            for (var obj in config) {
-                var cfg = config[obj];
-                if (cfg.enable == "1") {
-                    if (sensors[cfg.id] == null) {
-                        sensors[cfg.id] = new Object();
-                        sensors[cfg.id].id = cfg.id;
-                        if (cfg.function != undefined) {
-                            sensors[cfg.id].name = cfg.function;
-                        } else {
-                            sensors[cfg.id].name = cfg.id;
-                        }
-                        if (cfg.subtype != undefined) sensors[cfg.id].subtype = cfg.subtype;
-                        if (cfg.port != undefined) sensors[cfg.id].port = cfg.port[0];
-                    } else {
-                        if (cfg.function != undefined) sensors[cfg.id].name = cfg.function;
-                    }
-                }
-            }
-        }
-    }
     // handle the received sensor information
-    function handle_sensor(topic, payload) {
+    function handle_sensor(name, topic, payload) {
         // the retrieved sensor information
         var sensor = {};
         // the message type is the third value
@@ -63,15 +33,12 @@ socket.on("connect", function() {
         var sensorId = topic[2];
         // the transferred payload
         var value = JSON.parse(payload);
-        if (sensors[sensorId] == null) {
+        if (sensors[sensorId] === undefined) {
             sensors[sensorId] = new Object();
             sensor.id = sensorId;
-            sensor.name = sensorId;
+            sensor.name = name;
         } else sensor = sensors[sensorId];
-        // reset the name, if possible
-        if (sensor.name == sensorId && flx != undefined && sensor.port != undefined) {
-            sensor.name = flx[sensor.port].name + " " + sensor.subtype;
-        }
+        if (sensor.name !== name) sensor.name = name;
         // now compute the gauge
         switch (msgType) {
           case "gauge":
@@ -107,7 +74,7 @@ socket.on("connect", function() {
             }
             // create and fill an array of last n gauge
             // also create the corresponding table row to show - only if it not yet exists
-            if (sensor.display == null) {
+            if (sensor.display === undefined) {
                 numGauges++;
                 // put always two gauges into one table row
                 var tabcell = '<div id="' + sensorId + '"></div>';
@@ -136,7 +103,6 @@ socket.on("connect", function() {
             if (sensor.value > sensor.display.txtMaximum) {
                 sensor.display.refresh(sensor.value, sensor.value);
             } else sensor.display.refresh(sensor.value);
-            sensors[sensorId] = sensor;
             break;
 
           case "counter":
@@ -145,17 +111,8 @@ socket.on("connect", function() {
           default:
             break;
         }
+        sensors[sensorId] = sensor;
     }
-    // emit the subscription
-    socket.emit("subscribe", {
-        topic: "/device/+/config/sensor"
-    });
-    socket.emit("subscribe", {
-        topic: "/device/+/config/flx"
-    });
-    socket.emit("subscribe", {
-        topic: "/sensor/+/gauge"
-    });
 });
 
 $(document).ready(function() {
