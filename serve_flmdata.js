@@ -24,9 +24,6 @@ var url = require("url");
 
 var path = require("path");
 
-// the socket listens on the http port
-var io = require("socket.io")(http);
-
 // store detected sensors
 var sensors = {};
 
@@ -79,6 +76,18 @@ var ad = new mdns.Advertisement(mdns.tcp("http"), httpport, {
 });
 
 ad.start();
+
+// the socket listens on the http port
+var io = require("socket.io")(http);
+
+// direct a query request
+io.on("connection", function(socket) {
+    // handle database query request
+    socket.on("query", function(data) {
+        console.log("Socket received query request...");
+        handlequery(data);
+    });
+});
 
 // define what shall be done on a io request
 function handlequery(data) {
@@ -141,31 +150,15 @@ function handlequery(data) {
     });
 }
 
-// direct a query request
-io.on("connection", function(socket) {
-    // handle database query request
-    socket.on("query", function(data) {
-        console.log("Socket received query request...");
-        handlequery(data);
-    });
-});
-
 // handle the detected mqtt service
 function mqttconnect(address, port) {
     // the currently processed (FLM) device id
-    var mqttclient, flx;
+    var mqttclient;
+    var name;
     // the respective MQTT connection
     mqttclient = mqtt.connect({
         port: port,
         host: address
-    });
-    // handle socket.io requests
-    io.on("connection", function(socket) {
-        // handle additional subscription request(s)
-        socket.on("subscribe", function(data) {
-            // console.log("Socket received subscribe:", data.topic);
-            mqttclient.subscribe(data.topic);
-        });
     });
     // check mqtt messages
     mqttclient.on("connect", function() {
@@ -174,7 +167,6 @@ function mqttconnect(address, port) {
         // for the persistence subscription is needed:        
         mqttclient.subscribe("/device/+/config/sensor");
         mqttclient.subscribe("/device/+/config/flx");
-        mqttclient.subscribe("/sensor/+/gauge");
     });
     mqttclient.on("error", function() {
         // error handling to be a bit more sophisticated...
@@ -193,10 +185,16 @@ function mqttconnect(address, port) {
         switch (topicArray[1]) {
           case "device":
             handle_device(topicArray, payload);
+            name = topicArray[2];
             break;
 
           case "sensor":
-            handle_sensor(flx, topicArray, payload);
+            handle_sensor(topicArray, payload);
+            if (sensors[topicArray[2]] !== undefined) {
+                name = sensors[topicArray[2]].name;
+            } else {
+                name = topicArray[2];
+            }
             break;
 
           default:
@@ -204,38 +202,37 @@ function mqttconnect(address, port) {
         }
         // emit received message to socketio listener
         io.sockets.emit("mqtt", {
+            name: name,
             topic: topic,
             payload: JSON.stringify(payload)
         });
     });
     // handle the device configuration
     function handle_device(topicArray, payload) {
-        var deviceID = topicArray[2];
+        var flx;
         switch (topicArray[4]) {
           case "flx":
             flx = payload;
+            for (var id in sensors) {
+                if (sensors[id].port !== undefined) sensors[id].name = flx[sensors[id].port].name + " " + sensors[id].subtype;
+            }
             break;
 
           case "sensor":
             for (var obj in payload) {
                 var cfg = payload[obj];
                 if (cfg.enable == "1") {
-                    if (sensors[cfg.id] == null) {
-                        sensors[cfg.id] = new Object();
-                        sensors[cfg.id].id = cfg.id;
-                        if (cfg.function != undefined) {
-                            sensors[cfg.id].name = cfg.function;
-                        } else {
-                            sensors[cfg.id].name = cfg.id;
-                        }
-                        if (cfg.subtype != undefined) sensors[cfg.id].subtype = cfg.subtype;
-                        if (cfg.port != undefined) sensors[cfg.id].port = cfg.port[0];
-                    } else {
-                        if (cfg.function != undefined) {
-                            sensors[cfg.id].name = cfg.function;
-                        }
+                    if (sensors[cfg.id] === undefined) sensors[cfg.id] = new Object();
+                    sensors[cfg.id].id = cfg.id;
+                    if (cfg.function !== undefined) sensors[cfg.id].name = cfg.function;
+                    if (cfg.subtype !== undefined) sensors[cfg.id].subtype = cfg.subtype;
+                    if (cfg.port !== undefined) sensors[cfg.id].port = cfg.port[0];
+                    if (flx !== undefined) {
+                        if (flx[cfg.port] !== undefined) sensors[cfg.id].name = flx[cfg.port].name + " " + flx[cfg.port].subtype;
                     }
                     console.log("Detected sensor " + sensors[cfg.id].id + " (" + sensors[cfg.id].name + ")");
+                    mqttclient.subscribe("/sensor/" + cfg.id + "/gauge");
+                    mqttclient.subscribe("/sensor/" + cfg.id + "/counter");
                 }
             }
             break;
@@ -247,7 +244,7 @@ function mqttconnect(address, port) {
 }
 
 // handle the sensor readings
-function handle_sensor(flx, topicArray, payload) {
+function handle_sensor(topicArray, payload) {
     // the retrieved sensor information
     var sensor = {};
     // the message type is the third value
@@ -259,10 +256,6 @@ function handle_sensor(flx, topicArray, payload) {
         sensor.id = sensorId;
         sensor.name = sensorId;
     } else sensor = sensors[sensorId];
-    // reset the name, if possible
-    if (sensor.name == sensorId && flx != undefined && sensor.port != undefined) {
-        sensor.name = flx[sensor.port].name + " " + sensor.subtype;
-    }
     sensors[sensorId] = sensor;
     switch (msgType) {
       case "gauge":
