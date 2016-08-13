@@ -87,7 +87,7 @@ socket.on("connect", function() {
         var productionValue = 0;
         var consumptionValue = 0;
         for (var s in sensors) {
-            switch (sensors[s].type) {
+            switch (sensors[s].direction) {
               case "Production":
                 productionValue += Math.round(sensors[s].value);
                 break;
