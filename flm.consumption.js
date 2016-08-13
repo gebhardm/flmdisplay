@@ -60,17 +60,17 @@ socket.on("connect", function() {
               default:
                 break;
             }
-            if (sensor.type === undefined && sensor.unit === "W") {
+            if (sensor.direction === undefined && sensor.unit === "W") {
                 $("#choices").append("<div class='form-inline'>" + "<label id='" + sensor.id + "-label' for='" + sensor.id + "' class='control-label col-sm-3'>" + sensor.name + "</label>" + "<select id='" + sensor.id + "'>" + "<option>Consumption</option>" + "<option>Production</option>" + "<option>Ignore</option>" + "</select>" + "</div>");
                 $("#" + sensor.id).change(sensor, function(event) {
                     localStorage.setItem(event.data.id, event.target.value);
-                    sensors[event.data.id].type = event.target.value;
+                    sensors[event.data.id].direction = event.target.value;
                 });
                 var dirVal = localStorage.getItem(sensor.id);
                 if (dirVal !== undefined) {
                     $("#" + sensor.id).val(dirVal);
                 }
-                sensor.type = $("#" + sensor.id).val();
+                sensor.direction = $("#" + sensor.id).val();
             }
             if ($("#" + sensor.id + "-label").text() !== sensor.name) {
                 $("#" + sensor.id + "-label").text(sensor.name);
