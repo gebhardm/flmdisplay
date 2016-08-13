@@ -152,9 +152,9 @@ function handlequery(data) {
 
 // handle the detected mqtt service
 function mqttconnect(address, port) {
-    // the currently processed (FLM) device id
     var mqttclient;
     var name;
+    var flx;
     // the respective MQTT connection
     mqttclient = mqtt.connect({
         port: port,
@@ -209,13 +209,9 @@ function mqttconnect(address, port) {
     });
     // handle the device configuration
     function handle_device(topicArray, payload) {
-        var flx;
         switch (topicArray[4]) {
           case "flx":
             flx = payload;
-            for (var id in sensors) {
-                if (sensors[id].port !== undefined) sensors[id].name = flx[sensors[id].port].name + " " + sensors[id].subtype;
-            }
             break;
 
           case "sensor":
@@ -224,12 +220,13 @@ function mqttconnect(address, port) {
                 if (cfg.enable == "1") {
                     if (sensors[cfg.id] === undefined) sensors[cfg.id] = new Object();
                     sensors[cfg.id].id = cfg.id;
-                    if (cfg.function !== undefined) sensors[cfg.id].name = cfg.function;
+                    if (cfg.function !== undefined) {
+                        sensors[cfg.id].name = cfg.function;
+                    } else if (flx !== undefined && flx[cfg.port] !== undefined) {
+                        sensors[cfg.id].name = flx[cfg.port].name + " " + cfg.subtype;
+                    }
                     if (cfg.subtype !== undefined) sensors[cfg.id].subtype = cfg.subtype;
                     if (cfg.port !== undefined) sensors[cfg.id].port = cfg.port[0];
-                    if (flx !== undefined) {
-                        if (flx[cfg.port] !== undefined) sensors[cfg.id].name = flx[cfg.port].name + " " + cfg.subtype;
-                    }
                     console.log("Detected sensor " + sensors[cfg.id].id + " (" + sensors[cfg.id].name + ")");
                     mqttclient.subscribe("/sensor/" + cfg.id + "/gauge");
                     mqttclient.subscribe("/sensor/" + cfg.id + "/counter");
