@@ -100,6 +100,7 @@ io.on("connection", function(socket) {
 function mqttconnect(address, port) {
     var mqttclient;
     var name;
+    var flx;
     mqttclient = mqtt.connect({
         port: port,
         host: address
@@ -109,7 +110,7 @@ function mqttconnect(address, port) {
         var now = new Date();
         console.log(now + " : Connected to " + address + ":" + port);
         // for the persistence subscription is needed:
-        mqttclient.subscribe("/device/+/config/flx");        
+        mqttclient.subscribe("/device/+/config/flx");
         mqttclient.subscribe("/device/+/config/sensor");
     });
     mqttclient.on("error", function() {
@@ -153,7 +154,6 @@ function mqttconnect(address, port) {
     });
     // handle the device configuration
     function handle_device(topicArray, payload) {
-        var flx;
         switch (topicArray[4]) {
           case "flx":
             flx = payload;
@@ -178,8 +178,8 @@ function mqttconnect(address, port) {
                     if (cfg.function !== undefined) sensors[cfg.id].name = cfg.function;
                     if (cfg.subtype !== undefined) sensors[cfg.id].subtype = cfg.subtype;
                     if (cfg.port !== undefined) sensors[cfg.id].port = cfg.port[0];
-                    if (flx !== undefined) {
-                        if (flx[cfg.port] !== undefined) sensors[cfg.id].name = flx[cfg.port].name + " " + cfg.subtype;
+                    if (flx !== undefined && flx[cfg.port] !== undefined) {
+                        sensors[cfg.id].name = flx[cfg.port].name + " " + cfg.subtype;
                     }
                     var insertStr = 'INSERT INTO flmconfig (sensor, name) VALUES ("' + cfg.id + '", "' + sensors[cfg.id].name + '") ON DUPLICATE KEY UPDATE name = "' + sensors[cfg.id].name + '";';
                     database.query(insertStr, function(err, res) {
