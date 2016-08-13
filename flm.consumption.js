@@ -67,7 +67,7 @@ socket.on("connect", function() {
                     sensors[event.data.id].direction = event.target.value;
                 });
                 var dirVal = localStorage.getItem(sensor.id);
-                if (dirVal !== undefined) {
+                if (dirVal !== null) {
                     $("#" + sensor.id).val(dirVal);
                 }
                 sensor.direction = $("#" + sensor.id).val();
