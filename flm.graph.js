@@ -26,7 +26,7 @@ $(function() {
             }).fadeIn(200);
         } else $("#tooltip").hide();
     });
-    // toggle the selection    
+    // toggle the selection
     $("#toggle").click(function() {
         if (infoVis) $("#infopanel").hide(); else $("#infopanel").show();
         infoVis = !infoVis;
@@ -115,7 +115,7 @@ function handle_sensor(name, topic, payload) {
         var obj = series.filter(function(o) {
             return o.label == sensor.name;
         });
-        if (obj[0] == null) {
+        if (obj[0] === undefined) {
             obj = series.filter(function(o) {
                 return o.label == sensor.id;
             });
@@ -124,7 +124,7 @@ function handle_sensor(name, topic, payload) {
         // see https://github.com/flot/flot/blob/master/API.md#time-series-data
         var timestamp = value[0] * 1e3;
         // ...if current sensor does not exist yet, register it
-        if (obj[0] == null) {
+        if (obj[0] === undefined) {
             obj = {};
             obj.label = sensor.name;
             obj.data = [ timestamp, value[1] ];

@@ -120,8 +120,8 @@ function handlequery(data) {
         var series = {};
         for (var i in rows) {
             var sensorId = rows[i].sensor;
-            if (sensors[sensorId] != null) sensorId = sensors[sensorId].name;
-            if (series[sensorId] == null) series[sensorId] = new Array();
+            if (sensors[sensorId] !== undefined) sensorId = sensors[sensorId].name;
+            if (series[sensorId] === undefined) series[sensorId] = new Array();
             series[sensorId].push([ rows[i].timestamp * 1e3, rows[i].value ]);
         }
         // reduce the time series length through averages
@@ -164,9 +164,9 @@ function mqttconnect(address, port) {
     mqttclient.on("connect", function() {
         var now = new Date();
         console.log(now + " : Connected to " + address + ":" + port);
-        // for the persistence subscription is needed:        
-        mqttclient.subscribe("/device/+/config/sensor");
+        // for the persistence subscription is needed:
         mqttclient.subscribe("/device/+/config/flx");
+        mqttclient.subscribe("/device/+/config/sensor");
     });
     mqttclient.on("error", function() {
         // error handling to be a bit more sophisticated...
@@ -228,7 +228,7 @@ function mqttconnect(address, port) {
                     if (cfg.subtype !== undefined) sensors[cfg.id].subtype = cfg.subtype;
                     if (cfg.port !== undefined) sensors[cfg.id].port = cfg.port[0];
                     if (flx !== undefined) {
-                        if (flx[cfg.port] !== undefined) sensors[cfg.id].name = flx[cfg.port].name + " " + flx[cfg.port].subtype;
+                        if (flx[cfg.port] !== undefined) sensors[cfg.id].name = flx[cfg.port].name + " " + cfg.subtype;
                     }
                     console.log("Detected sensor " + sensors[cfg.id].id + " (" + sensors[cfg.id].name + ")");
                     mqttclient.subscribe("/sensor/" + cfg.id + "/gauge");
@@ -251,7 +251,7 @@ function handle_sensor(topicArray, payload) {
     var msgType = topicArray[3];
     // the sensor ID
     var sensorId = topicArray[2];
-    if (sensors[sensorId] == null) {
+    if (sensors[sensorId] === undefined) {
         sensors[sensorId] = new Object();
         sensor.id = sensorId;
         sensor.name = sensorId;

@@ -2,7 +2,7 @@
 var infoVis = true;
 
 $(document).ready(function() {
-    // toggle the selection    
+    // toggle the selection
     $("#toggle").click(function() {
         if (infoVis) $("#infopanel").hide(); else $("#infopanel").show();
         infoVis = !infoVis;
@@ -43,7 +43,7 @@ socket.on("connect", function() {
         var sensor = {};
         var msgType = topic[3];
         var sensorId = topic[2];
-        if (sensors[sensorId] == null) {
+        if (sensors[sensorId] === undefined) {
             sensors[sensorId] = new Object();
             sensor.id = sensorId;
             sensor.name = name;
@@ -57,7 +57,7 @@ socket.on("connect", function() {
         switch (msgType) {
           case "gauge":
             // Sensor handling - transfer the current values from the payload
-            if (value.length == null) {
+            if (value.length === undefined) {
                 sensor.gaugevalue = value;
                 sensor.gaugeunit = "";
                 sensor.gaugetimestamp = "";
@@ -90,7 +90,7 @@ socket.on("connect", function() {
             }
             // create and fill an array of last n gauge
             // also create the corresponding table row to show - only if it not yet exists
-            if (sensor.series == null) {
+            if (sensor.series === undefined) {
                 sensor.series = new Array();
                 numGauges++;
                 var tablerow = "<tr>" + '<td width="30%" style="vertical-align:middle;">' + '<h4 id="sensor' + sensor.id + '"></h4>' + '<small id="time' + sensor.id + '"><small>' + "</td>" + '<td style="vertical-align:middle;">' + '<span id="valueSparkline' + sensor.id + '"></span>' + "</td>" + '<td width="30%" style="vertical-align:middle;">' + '<h4 id="value' + sensor.id + '"></h4>' + '<small id="counter' + sensor.id + '"></small>' + "</td>" + "</tr>";

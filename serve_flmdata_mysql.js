@@ -108,9 +108,9 @@ function mqttconnect(address, port) {
     mqttclient.on("connect", function() {
         var now = new Date();
         console.log(now + " : Connected to " + address + ":" + port);
-        // for the persistence subscription is needed:        
+        // for the persistence subscription is needed:
+        mqttclient.subscribe("/device/+/config/flx");        
         mqttclient.subscribe("/device/+/config/sensor");
-        mqttclient.subscribe("/device/+/config/flx");
     });
     mqttclient.on("error", function() {
         // error handling to be a bit more sophisticated...
@@ -173,13 +173,13 @@ function mqttconnect(address, port) {
             for (var obj in payload) {
                 var cfg = payload[obj];
                 if (cfg.enable == "1") {
-                    if (sensors[cfg.id] == null) sensors[cfg.id] = new Object();
+                    if (sensors[cfg.id] === undefined) sensors[cfg.id] = new Object();
                     sensors[cfg.id].id = cfg.id;
                     if (cfg.function !== undefined) sensors[cfg.id].name = cfg.function;
                     if (cfg.subtype !== undefined) sensors[cfg.id].subtype = cfg.subtype;
                     if (cfg.port !== undefined) sensors[cfg.id].port = cfg.port[0];
                     if (flx !== undefined) {
-                        if (flx[cfg.port] !== undefined) sensors[cfg.id].name = flx[cfg.port].name + " " + flx[cfg.port].subtype;
+                        if (flx[cfg.port] !== undefined) sensors[cfg.id].name = flx[cfg.port].name + " " + cfg.subtype;
                     }
                     var insertStr = 'INSERT INTO flmconfig (sensor, name) VALUES ("' + cfg.id + '", "' + sensors[cfg.id].name + '") ON DUPLICATE KEY UPDATE name = "' + sensors[cfg.id].name + '";';
                     database.query(insertStr, function(err, res) {
@@ -210,7 +210,7 @@ function handle_sensor(topicArray, payload) {
     var msgType = topicArray[3];
     // the sensor ID
     var sensorId = topicArray[2];
-    if (sensors[sensorId] == null) {
+    if (sensors[sensorId] === undefined) {
         sensors[sensorId] = new Object();
         sensor.id = sensorId;
         sensor.name = sensorId;
@@ -346,8 +346,8 @@ function handlequery(data) {
         var series = {};
         for (var i in rows) {
             var sensorId = rows[i].sensor;
-            if (sensors[sensorId] != null) sensorId = sensors[sensorId].name;
-            if (series[sensorId] == null) series[sensorId] = new Array();
+            if (sensors[sensorId] !== undefined) sensorId = sensors[sensorId].name;
+            if (series[sensorId] === undefined) series[sensorId] = new Array();
             series[sensorId].push([ rows[i].timestamp * 1e3, rows[i].value ]);
         }
         // reduce the time series length through averages

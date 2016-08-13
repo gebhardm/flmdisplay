@@ -43,7 +43,7 @@ socket.on("connect", function() {
         switch (msgType) {
           case "gauge":
             // Sensor handling - transfer the current values from the payload
-            if (value.length == null) {
+            if (value.length === undefined) {
                 sensor.value = value;
                 sensor.unit = "";
             } else {
@@ -116,7 +116,7 @@ socket.on("connect", function() {
 });
 
 $(document).ready(function() {
-    // toggle the message display    
+    // toggle the message display
     $("#toggle").click(function() {
         if (infoVis) $("#infopanel").hide(); else $("#infopanel").show();
         infoVis = !infoVis;
