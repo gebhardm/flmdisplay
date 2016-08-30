@@ -118,16 +118,6 @@ function mqttconnect(address, port) {
         switch (topicArray[4]) {
           case "flx":
             flx = payload;
-            for (var id in sensors) {
-                if (sensors[id].port !== undefined) sensors[id].name = flx[sensors[id].port].name + " " + sensors[id].subtype;
-                var insertStr = 'INSERT INTO flmconfig (sensor, name) VALUES ("' + sensors[id].id + '", "' + sensors[id].name + '") ON DUPLICATE KEY UPDATE name = "' + sensors[id].name + '";';
-                database.query(insertStr, function(err, res) {
-                    if (err) {
-                        database.end();
-                        throw err;
-                    }
-                });
-            }
             break;
 
           case "sensor":
